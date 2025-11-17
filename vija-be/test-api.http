@@ -1,0 +1,27 @@
+### Test Backend Health
+GET http://localhost:3000
+
+### Test Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### Test Get QLKH (thay YOUR_TOKEN bằng token từ login)
+GET http://localhost:3000/api/qlkh
+Authorization: Bearer YOUR_TOKEN
+
+### Test Create QLKH
+POST http://localhost:3000/api/qlkh
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN
+
+{
+  "po": "PO001",
+  "ma_bv": "BV001",
+  "so_luong": 100,
+  "don_gia": 50000
+}

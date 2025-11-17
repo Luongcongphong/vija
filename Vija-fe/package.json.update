@@ -1,0 +1,8 @@
+// Thêm axios vào dependencies nếu chưa có:
+// npm install axios
+
+{
+  "dependencies": {
+    "axios": "^1.6.2"
+  }
+}
