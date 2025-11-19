@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getAllQLNB, getQLNBById, createQLNB, updateQLNB, deleteQLNB } from '../controllers/qlnbController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requireKyThuat } from '../middleware/auth';
 
 const router = Router();
 
 router.use(authMiddleware);
+router.use(requireKyThuat); // Admin và Kỹ thuật
 
 router.get('/', getAllQLNB);
 router.get('/:id', getQLNBById);

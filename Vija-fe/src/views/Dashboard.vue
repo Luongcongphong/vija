@@ -1,7 +1,17 @@
 <template>
   <AdminLayout>
-    <div class="mb-6">
+    <div class="mb-6 flex justify-between items-center">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+      <button
+        @click="exportToExcel"
+        :disabled="loading || dashboardData.length === 0"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Export Excel
+      </button>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -28,27 +38,38 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="loading">
+              <td colspan="16" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+            </tr>
+            <tr v-else-if="dashboardData.length === 0">
+              <td colspan="16" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+            </tr>
             <tr
+              v-else
               v-for="item in dashboardData"
-              :key="item.po + item.maBV"
+              :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <td class="px-4 py-3">{{ item.po }}</td>
-              <td class="px-4 py-3">{{ item.maBV }}</td>
-              <td class="px-4 py-3">{{ item.soLuong }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.donGia) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.thanhTien) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phoiLieu) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.giaCongNgoai) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.giaCongNoiBo) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.xuLyBeMatItem) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.vanChuyen) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phiQLDN) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.tongPhi) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.loiNhuan) }}</td>
-              <td class="px-4 py-3">{{ item.tyLe }}%</td>
-              <td class="px-4 py-3">{{ item.ngayTao }}</td>
-              <td class="px-4 py-3">{{ item.ghiChu }}</td>
+              <td class="px-4 py-3">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3">{{ item.so_luong }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.thanh_tien) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.van_chuyen) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.phi_qldn) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.tong_phi) }}</td>
+              <td class="px-4 py-3" :class="item.loi_nhuan >= 0 ? 'text-green-600' : 'text-red-600'">
+                {{ formatCurrency(item.loi_nhuan) }}
+              </td>
+              <td class="px-4 py-3" :class="item.ty_le >= 0 ? 'text-green-600' : 'text-red-600'">
+                {{ item.ty_le }}%
+              </td>
+              <td class="px-4 py-3">{{ formatDate(item.ngay_tao) }}</td>
+              <td class="px-4 py-3">{{ item.ghi_chu || '-' }}</td>
             </tr>
           </tbody>
         </table>
@@ -60,35 +81,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { dashboardService, type DashboardData } from '@/services/dashboardService'
+import * as XLSX from 'xlsx'
 
-interface QLKHData {
-  po: string
-  maBV: string
-  soLuong: number
-  donGia: number
-  thanhTien: number
-}
-
-interface QLNBData {
-  po: string
-  maBV: string
-  phoiLieu: number
-  giaCongNgoai: number
-  giaCongNoiBo: number
-  xuLyBeMatItem: number
-  vanChuyen: number
-  phiQLDN: number
-  tongPhi: number
-}
-
-interface DashboardItem extends QLKHData, QLNBData {
-  loiNhuan: number
-  tyLe: number
-  ngayTao: string
-  ghiChu: string
-}
-
-const dashboardData = ref<DashboardItem[]>([])
+const dashboardData = ref<DashboardData[]>([])
+const loading = ref(false)
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -97,32 +94,83 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-const loadData = () => {
-  const qlkhData = JSON.parse(localStorage.getItem('qlkhData') || '[]')
-  const qlnbData = JSON.parse(localStorage.getItem('qlnbData') || '[]')
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('vi-VN')
+}
 
-  dashboardData.value = qlkhData.map((kh: QLKHData) => {
-    const nb = qlnbData.find((n: QLNBData) => n.po === kh.po && n.maBV === kh.maBV)
-    
-    const tongPhi = nb?.tongPhi || 0
-    const loiNhuan = kh.thanhTien - tongPhi
-    const tyLe = kh.thanhTien > 0 ? ((loiNhuan / kh.thanhTien) * 100).toFixed(2) : 0
+const loadData = async () => {
+  try {
+    loading.value = true
+    const result = await dashboardService.getData()
+    dashboardData.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu:', error)
+    alert('Không thể tải dữ liệu Dashboard!')
+  } finally {
+    loading.value = false
+  }
+}
 
-    return {
-      ...kh,
-      phoiLieu: nb?.phoiLieu || 0,
-      giaCongNgoai: nb?.giaCongNgoai || 0,
-      giaCongNoiBo: nb?.giaCongNoiBo || 0,
-      xuLyBeMatItem: nb?.xuLyBeMatItem || 0,
-      vanChuyen: nb?.vanChuyen || 0,
-      phiQLDN: nb?.phiQLDN || 0,
-      tongPhi,
-      loiNhuan,
-      tyLe: Number(tyLe),
-      ngayTao: new Date().toLocaleDateString('vi-VN'),
-      ghiChu: '',
-    }
-  })
+const exportToExcel = () => {
+  if (dashboardData.value.length === 0) {
+    alert('Không có dữ liệu để export!')
+    return
+  }
+
+  // Chuẩn bị dữ liệu cho Excel
+  const excelData = dashboardData.value.map(item => ({
+    'PO': item.po,
+    'Mã BV': item.ma_bv,
+    'Số Lượng': item.so_luong,
+    'Đơn giá': item.don_gia,
+    'Thành Tiền': item.thanh_tien,
+    'Phôi Liệu': item.phoi_lieu,
+    'Gia Công Ngoài': item.gia_cong_ngoai,
+    'Gia Công Nội Bộ': item.gia_cong_noi_bo,
+    'Xử lý Bề Mặt': item.xu_ly_be_mat,
+    'Vận Chuyển': item.van_chuyen,
+    'Phí QLDN': item.phi_qldn,
+    'Tổng Phí': item.tong_phi,
+    'Lợi Nhuận': item.loi_nhuan,
+    'Tỷ lệ (%)': item.ty_le,
+    'Ngày tạo': formatDate(item.ngay_tao),
+  }))
+
+  // Tạo worksheet
+  const ws = XLSX.utils.json_to_sheet(excelData)
+
+  // Định dạng cột (width)
+  const colWidths = [
+    { wch: 12 }, // PO
+    { wch: 12 }, // Mã BV
+    { wch: 10 }, // Số Lượng
+    { wch: 15 }, // Đơn giá
+    { wch: 15 }, // Thành Tiền
+    { wch: 15 }, // Phôi Liệu
+    { wch: 15 }, // Gia Công Ngoài
+    { wch: 15 }, // Gia Công Nội Bộ
+    { wch: 15 }, // Xử lý Bề Mặt
+    { wch: 15 }, // Vận Chuyển
+    { wch: 15 }, // Phí QLDN
+    { wch: 15 }, // Tổng Phí
+    { wch: 15 }, // Lợi Nhuận
+    { wch: 10 }, // Tỷ lệ
+    { wch: 12 }, // Ngày tạo
+  ]
+  ws['!cols'] = colWidths
+
+  // Tạo workbook
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Dashboard')
+
+  // Tạo tên file với timestamp
+  const timestamp = new Date().toISOString().slice(0, 10)
+  const filename = `Dashboard_${timestamp}.xlsx`
+
+  // Download file
+  XLSX.writeFile(wb, filename)
 }
 
 onMounted(() => {

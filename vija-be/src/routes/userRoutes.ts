@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getAllUsers, getUserById, createUser, updateUser, deleteUser } from '../controllers/userController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
 router.use(authMiddleware);
+router.use(requireAdmin); // Chỉ Admin
 
 router.get('/', getAllUsers);
 router.get('/:id', getUserById);

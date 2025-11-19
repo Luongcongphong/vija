@@ -5,7 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows] = await pool.query('SELECT id, username, created_at FROM users ORDER BY created_at DESC');
+    const [rows] = await pool.query('SELECT id, username, role, created_at FROM users ORDER BY created_at DESC');
     res.json(rows);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error });
@@ -14,7 +14,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
 
 export const getUserById = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows]: any = await pool.query('SELECT id, username, created_at FROM users WHERE id = ?', [req.params.id]);
+    const [rows]: any = await pool.query('SELECT id, username, role, created_at FROM users WHERE id = ?', [req.params.id]);
     
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy' });
@@ -28,7 +28,7 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
 
 export const createUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role = 'sales' } = req.body;
 
     const [existing]: any = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
     
@@ -39,8 +39,8 @@ export const createUser = async (req: AuthRequest, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const [result]: any = await pool.query(
-      'INSERT INTO users (username, password) VALUES (?, ?)',
-      [username, hashedPassword]
+      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      [username, hashedPassword, role]
     );
 
     res.status(201).json({
@@ -54,18 +54,18 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
 
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       await pool.query(
-        'UPDATE users SET username = ?, password = ? WHERE id = ?',
-        [username, hashedPassword, req.params.id]
+        'UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?',
+        [username, hashedPassword, role, req.params.id]
       );
     } else {
       await pool.query(
-        'UPDATE users SET username = ? WHERE id = ?',
-        [username, req.params.id]
+        'UPDATE users SET username = ?, role = ? WHERE id = ?',
+        [username, role, req.params.id]
       );
     }
 

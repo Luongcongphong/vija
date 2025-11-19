@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getAllQLPO, getQLPOById, createQLPO, updateQLPO, deleteQLPO } from '../controllers/qlpoController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requireKyThuat } from '../middleware/auth';
 
 const router = Router();
 
 router.use(authMiddleware);
+router.use(requireKyThuat); // Admin và Kỹ thuật
 
 router.get('/', getAllQLPO);
 router.get('/:id', getQLPOById);

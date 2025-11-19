@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getAllQLDM, getQLDMById, createQLDM, updateQLDM, deleteQLDM } from '../controllers/qldmController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requireSales } from '../middleware/auth';
 
 const router = Router();
 
 router.use(authMiddleware);
+router.use(requireSales); // Admin và Sales
 
 router.get('/', getAllQLDM);
 router.get('/:id', getQLDMById);

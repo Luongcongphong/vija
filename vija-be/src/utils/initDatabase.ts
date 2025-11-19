@@ -10,6 +10,7 @@ export async function initDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        role ENUM('admin', 'sales', 'kythuat') DEFAULT 'sales',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
@@ -102,6 +103,14 @@ async function checkAndAddColumns() {
         ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       `);
       console.log('✓ Đã thêm cột created_at vào bảng users');
+    }
+
+    if (!userColumnNames.includes('role')) {
+      await pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN role ENUM('admin', 'sales', 'kythuat') DEFAULT 'sales'
+      `);
+      console.log('✓ Đã thêm cột role vào bảng users');
     }
 
     // Kiểm tra các cột trong bảng qlkh

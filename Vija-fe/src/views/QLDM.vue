@@ -24,26 +24,35 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="loading">
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+            </tr>
+            <tr v-else-if="data.length === 0">
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+            </tr>
             <tr
-              v-for="(item, index) in data"
-              :key="index"
+              v-else
+              v-for="item in data"
+              :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <td class="px-4 py-3">{{ item.po }}</td>
-              <td class="px-4 py-3">{{ item.maBV }}</td>
-              <td class="px-4 py-3">{{ item.sl }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.donGia) }}</td>
-              <td class="px-4 py-3">{{ item.dinhMuc }}</td>
+              <td class="px-4 py-3">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3">{{ item.so_luong }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3">{{ item.dinh_muc }}</td>
               <td class="px-4 py-3">
                 <button
-                  @click="editItem(index)"
+                  @click="editItem(item)"
                   class="text-blue-600 hover:text-blue-800 mr-3"
+                  :disabled="loading"
                 >
                   Sửa
                 </button>
                 <button
-                  @click="deleteItem(index)"
+                  @click="deleteItem(item.id!)"
                   class="text-red-600 hover:text-red-800"
+                  :disabled="loading"
                 >
                   Xóa
                 </button>
@@ -65,27 +74,28 @@
         </h2>
         <form @submit.prevent="saveItem">
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">PO</label>
-            <input
+            <SearchableSelect
               v-model="formData.po"
-              type="text"
-              required
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              :options="poOptions"
+              label="PO"
+              placeholder="Chọn hoặc tìm PO..."
+              :required="true"
+              @update:modelValue="handlePOChange"
             />
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Mã BV</label>
-            <input
-              v-model="formData.maBV"
-              type="text"
-              required
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            <SearchableSelect
+              v-model="formData.ma_bv"
+              :options="maBVOptions"
+              label="Mã BV"
+              placeholder="Chọn hoặc tìm Mã BV..."
+              :required="true"
             />
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">SL</label>
+            <label class="block text-sm font-medium mb-2">Số Lượng</label>
             <input
-              v-model.number="formData.sl"
+              v-model.number="formData.so_luong"
               type="number"
               required
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -94,7 +104,7 @@
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Đơn giá</label>
             <input
-              v-model.number="formData.donGia"
+              v-model.number="formData.don_gia"
               type="number"
               required
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -103,8 +113,8 @@
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Định Mức</label>
             <input
-              v-model="formData.dinhMuc"
-              type="text"
+              v-model.number="formData.dinh_muc"
+              type="number"
               required
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
@@ -131,27 +141,74 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import { qldmService, type QLDM } from '@/services/qldmService'
+import { qlpoService } from '@/services/qlpoService'
 
 interface QLDMItem {
+  id?: number
   po: string
-  maBV: string
-  sl: number
-  donGia: number
-  dinhMuc: string
+  ma_bv: string
+  so_luong: number
+  don_gia: number
+  dinh_muc: number
 }
 
 const data = ref<QLDMItem[]>([])
+const qlpoData = ref<any[]>([])
 const showAddModal = ref(false)
-const editIndex = ref<number | null>(null)
+const editId = ref<number | null>(null)
+const loading = ref(false)
 const formData = ref({
   po: '',
-  maBV: '',
-  sl: 0,
-  donGia: 0,
-  dinhMuc: '',
+  ma_bv: '',
+  so_luong: 0,
+  don_gia: 0,
+  dinh_muc: 0,
 })
+
+// Tạo options cho PO
+const poOptions = computed(() => {
+  const uniquePOs = [...new Set(qlpoData.value.map(item => item.po))]
+  return uniquePOs.map(po => ({
+    value: po,
+    label: po
+  }))
+})
+
+// Tạo options cho Mã BV
+const maBVOptions = computed(() => {
+  if (!formData.value.po) {
+    return qlpoData.value.map(item => ({
+      value: item.ma_bv,
+      label: `${item.ma_bv} (${item.po})`
+    }))
+  }
+  
+  return qlpoData.value
+    .filter(item => item.po === formData.value.po)
+    .map(item => ({
+      value: item.ma_bv,
+      label: item.ma_bv
+    }))
+})
+
+// Load QLPO
+const loadQLPO = async () => {
+  try {
+    const result = await qlpoService.getAll()
+    qlpoData.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải QLPO:', error)
+  }
+}
+
+// Khi chọn PO, reset Mã BV
+const handlePOChange = (po: string) => {
+  formData.value.ma_bv = ''
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -160,55 +217,80 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-const loadData = () => {
-  const saved = localStorage.getItem('qldmData')
-  if (saved) {
-    data.value = JSON.parse(saved)
+const loadData = async () => {
+  try {
+    loading.value = true
+    const result = await qldmService.getAll()
+    data.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu:', error)
+    alert('Không thể tải dữ liệu!')
+  } finally {
+    loading.value = false
   }
 }
 
-const saveData = () => {
-  localStorage.setItem('qldmData', JSON.stringify(data.value))
-}
-
-const saveItem = () => {
-  if (editIndex.value !== null) {
-    data.value[editIndex.value] = { ...formData.value }
-  } else {
-    data.value.push({ ...formData.value })
+const saveItem = async () => {
+  try {
+    loading.value = true
+    
+    if (editId.value !== null) {
+      await qldmService.update(editId.value, formData.value)
+    } else {
+      await qldmService.create(formData.value)
+    }
+    
+    await loadData()
+    closeModal()
+  } catch (error) {
+    console.error('Lỗi khi lưu:', error)
+    alert('Không thể lưu dữ liệu!')
+  } finally {
+    loading.value = false
   }
-
-  saveData()
-  closeModal()
 }
 
-const editItem = (index: number) => {
-  editIndex.value = index
-  const item = data.value[index]
-  formData.value = { ...item }
+const editItem = (item: QLDMItem) => {
+  editId.value = item.id || null
+  formData.value = {
+    po: item.po,
+    ma_bv: item.ma_bv,
+    so_luong: item.so_luong,
+    don_gia: item.don_gia,
+    dinh_muc: item.dinh_muc,
+  }
   showAddModal.value = true
 }
 
-const deleteItem = (index: number) => {
+const deleteItem = async (id: number) => {
   if (confirm('Bạn có chắc muốn xóa?')) {
-    data.value.splice(index, 1)
-    saveData()
+    try {
+      loading.value = true
+      await qldmService.delete(id)
+      await loadData()
+    } catch (error) {
+      console.error('Lỗi khi xóa:', error)
+      alert('Không thể xóa dữ liệu!')
+    } finally {
+      loading.value = false
+    }
   }
 }
 
 const closeModal = () => {
   showAddModal.value = false
-  editIndex.value = null
+  editId.value = null
   formData.value = {
     po: '',
-    maBV: '',
-    sl: 0,
-    donGia: 0,
-    dinhMuc: '',
+    ma_bv: '',
+    so_luong: 0,
+    don_gia: 0,
+    dinh_muc: 0,
   }
 }
 
 onMounted(() => {
+  loadQLPO()
   loadData()
 })
 </script>

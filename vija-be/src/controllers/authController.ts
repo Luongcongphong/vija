@@ -22,7 +22,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, role: user.role },
       process.env.JWT_SECRET || 'vija_secret_key_2024',
       { expiresIn: '24h' }
     );
@@ -31,7 +31,8 @@ export const login = async (req: Request, res: Response) => {
       token,
       user: {
         id: user.id,
-        username: user.username
+        username: user.username,
+        role: user.role
       }
     });
   } catch (error) {
@@ -41,7 +42,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role = 'sales' } = req.body;
 
     const [existing]: any = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
     
@@ -52,8 +53,8 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const [result]: any = await pool.query(
-      'INSERT INTO users (username, password) VALUES (?, ?)',
-      [username, hashedPassword]
+      'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      [username, hashedPassword, role]
     );
 
     res.status(201).json({

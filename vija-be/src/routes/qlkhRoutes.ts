@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getAllQLKH, getQLKHById, createQLKH, updateQLKH, deleteQLKH } from '../controllers/qlkhController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requireSales } from '../middleware/auth';
 
 const router = Router();
 
 router.use(authMiddleware);
+router.use(requireSales); // Admin và Sales
 
 router.get('/', getAllQLKH);
 router.get('/:id', getQLKHById);

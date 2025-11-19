@@ -28,9 +28,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/auth/signin';
+      // Chỉ redirect nếu không phải trang login
+      if (!window.location.pathname.includes('/signin')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('currentUser');
+        window.location.href = '/signin';
+      }
     }
     return Promise.reject(error);
   }

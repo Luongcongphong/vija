@@ -28,30 +28,39 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="loading">
+              <td colspan="10" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+            </tr>
+            <tr v-else-if="data.length === 0">
+              <td colspan="10" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+            </tr>
             <tr
-              v-for="(item, index) in data"
-              :key="index"
+              v-else
+              v-for="item in data"
+              :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <td class="px-4 py-3">{{ item.po }}</td>
-              <td class="px-4 py-3">{{ item.maBV }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phoiLieu) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.giaCongNgoai) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.giaCongNoiBo) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.xuLyBeMatItem) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.vanChuyen) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phiQLDN) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.tongPhi) }}</td>
+              <td class="px-4 py-3">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.van_chuyen) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.phi_qldn) }}</td>
+              <td class="px-4 py-3">{{ formatCurrency(item.tong_phi || 0) }}</td>
               <td class="px-4 py-3">
                 <button
-                  @click="editItem(index)"
+                  @click="editItem(item)"
                   class="text-blue-600 hover:text-blue-800 mr-3"
+                  :disabled="loading"
                 >
                   Sửa
                 </button>
                 <button
-                  @click="deleteItem(index)"
+                  @click="deleteItem(item.id!)"
                   class="text-red-600 hover:text-red-800"
+                  :disabled="loading"
                 >
                   Xóa
                 </button>
@@ -74,27 +83,28 @@
         <form @submit.prevent="saveItem">
           <div class="grid grid-cols-2 gap-4">
             <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">PO</label>
-              <input
+              <SearchableSelect
                 v-model="formData.po"
-                type="text"
-                required
-                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                :options="poOptions"
+                label="PO"
+                placeholder="Chọn hoặc tìm PO..."
+                :required="true"
+                @update:modelValue="handlePOChange"
               />
             </div>
             <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">Mã BV</label>
-              <input
-                v-model="formData.maBV"
-                type="text"
-                required
-                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              <SearchableSelect
+                v-model="formData.ma_bv"
+                :options="maBVOptions"
+                label="Mã BV"
+                placeholder="Chọn hoặc tìm Mã BV..."
+                :required="true"
               />
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium mb-2">Phôi Liệu</label>
               <input
-                v-model.number="formData.phoiLieu"
+                v-model.number="formData.phoi_lieu"
                 type="number"
                 required
                 class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -103,7 +113,7 @@
             <div class="mb-4">
               <label class="block text-sm font-medium mb-2">Gia Công Ngoài</label>
               <input
-                v-model.number="formData.giaCongNgoai"
+                v-model.number="formData.gia_cong_ngoai"
                 type="number"
                 required
                 class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -112,7 +122,7 @@
             <div class="mb-4">
               <label class="block text-sm font-medium mb-2">Gia Công Nội Bộ</label>
               <input
-                v-model.number="formData.giaCongNoiBo"
+                v-model.number="formData.gia_cong_noi_bo"
                 type="number"
                 required
                 class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -121,7 +131,7 @@
             <div class="mb-4">
               <label class="block text-sm font-medium mb-2">Xử lý Bề Mặt</label>
               <input
-                v-model.number="formData.xuLyBeMatItem"
+                v-model.number="formData.xu_ly_be_mat"
                 type="number"
                 required
                 class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -130,7 +140,7 @@
             <div class="mb-4">
               <label class="block text-sm font-medium mb-2">Vận Chuyển</label>
               <input
-                v-model.number="formData.vanChuyen"
+                v-model.number="formData.van_chuyen"
                 type="number"
                 required
                 class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -139,7 +149,7 @@
             <div class="mb-4">
               <label class="block text-sm font-medium mb-2">Phí QLDN</label>
               <input
-                v-model.number="formData.phiQLDN"
+                v-model.number="formData.phi_qldn"
                 type="number"
                 required
                 class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -168,34 +178,81 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
+import { qlnbService, type QLNB } from '@/services/qlnbService'
+import { qlpoService } from '@/services/qlpoService'
 
 interface QLNBItem {
+  id?: number
   po: string
-  maBV: string
-  phoiLieu: number
-  giaCongNgoai: number
-  giaCongNoiBo: number
-  xuLyBeMatItem: number
-  vanChuyen: number
-  phiQLDN: number
-  tongPhi: number
+  ma_bv: string
+  phoi_lieu: number
+  gia_cong_ngoai: number
+  gia_cong_noi_bo: number
+  xu_ly_be_mat: number
+  van_chuyen: number
+  phi_qldn: number
+  tong_phi?: number
 }
 
 const data = ref<QLNBItem[]>([])
+const qlpoData = ref<any[]>([])
 const showAddModal = ref(false)
-const editIndex = ref<number | null>(null)
+const editId = ref<number | null>(null)
+const loading = ref(false)
 const formData = ref({
   po: '',
-  maBV: '',
-  phoiLieu: 0,
-  giaCongNgoai: 0,
-  giaCongNoiBo: 0,
-  xuLyBeMatItem: 0,
-  vanChuyen: 0,
-  phiQLDN: 0,
+  ma_bv: '',
+  phoi_lieu: 0,
+  gia_cong_ngoai: 0,
+  gia_cong_noi_bo: 0,
+  xu_ly_be_mat: 0,
+  van_chuyen: 0,
+  phi_qldn: 0,
 })
+
+// Tạo options cho PO
+const poOptions = computed(() => {
+  const uniquePOs = [...new Set(qlpoData.value.map(item => item.po))]
+  return uniquePOs.map(po => ({
+    value: po,
+    label: po
+  }))
+})
+
+// Tạo options cho Mã BV
+const maBVOptions = computed(() => {
+  if (!formData.value.po) {
+    return qlpoData.value.map(item => ({
+      value: item.ma_bv,
+      label: `${item.ma_bv} (${item.po})`
+    }))
+  }
+  
+  return qlpoData.value
+    .filter(item => item.po === formData.value.po)
+    .map(item => ({
+      value: item.ma_bv,
+      label: item.ma_bv
+    }))
+})
+
+// Load QLPO
+const loadQLPO = async () => {
+  try {
+    const result = await qlpoService.getAll()
+    qlpoData.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải QLPO:', error)
+  }
+}
+
+// Khi chọn PO, reset Mã BV
+const handlePOChange = (po: string) => {
+  formData.value.ma_bv = ''
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -204,66 +261,86 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-const loadData = () => {
-  const saved = localStorage.getItem('qlnbData')
-  if (saved) {
-    data.value = JSON.parse(saved)
+const loadData = async () => {
+  try {
+    loading.value = true
+    const result = await qlnbService.getAll()
+    data.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu:', error)
+    alert('Không thể tải dữ liệu!')
+  } finally {
+    loading.value = false
   }
 }
 
-const saveData = () => {
-  localStorage.setItem('qlnbData', JSON.stringify(data.value))
-}
-
-const saveItem = () => {
-  const tongPhi =
-    formData.value.phoiLieu +
-    formData.value.giaCongNgoai +
-    formData.value.giaCongNoiBo +
-    formData.value.xuLyBeMatItem +
-    formData.value.vanChuyen +
-    formData.value.phiQLDN
-
-  if (editIndex.value !== null) {
-    data.value[editIndex.value] = { ...formData.value, tongPhi }
-  } else {
-    data.value.push({ ...formData.value, tongPhi })
+const saveItem = async () => {
+  try {
+    loading.value = true
+    
+    if (editId.value !== null) {
+      await qlnbService.update(editId.value, formData.value)
+    } else {
+      await qlnbService.create(formData.value)
+    }
+    
+    await loadData()
+    closeModal()
+  } catch (error) {
+    console.error('Lỗi khi lưu:', error)
+    alert('Không thể lưu dữ liệu!')
+  } finally {
+    loading.value = false
   }
-
-  saveData()
-  closeModal()
 }
 
-const editItem = (index: number) => {
-  editIndex.value = index
-  const item = data.value[index]
-  formData.value = { ...item }
+const editItem = (item: QLNBItem) => {
+  editId.value = item.id || null
+  formData.value = {
+    po: item.po,
+    ma_bv: item.ma_bv,
+    phoi_lieu: item.phoi_lieu,
+    gia_cong_ngoai: item.gia_cong_ngoai,
+    gia_cong_noi_bo: item.gia_cong_noi_bo,
+    xu_ly_be_mat: item.xu_ly_be_mat,
+    van_chuyen: item.van_chuyen,
+    phi_qldn: item.phi_qldn,
+  }
   showAddModal.value = true
 }
 
-const deleteItem = (index: number) => {
+const deleteItem = async (id: number) => {
   if (confirm('Bạn có chắc muốn xóa?')) {
-    data.value.splice(index, 1)
-    saveData()
+    try {
+      loading.value = true
+      await qlnbService.delete(id)
+      await loadData()
+    } catch (error) {
+      console.error('Lỗi khi xóa:', error)
+      alert('Không thể xóa dữ liệu!')
+    } finally {
+      loading.value = false
+    }
   }
 }
 
 const closeModal = () => {
   showAddModal.value = false
-  editIndex.value = null
+  editId.value = null
   formData.value = {
     po: '',
-    maBV: '',
-    phoiLieu: 0,
-    giaCongNgoai: 0,
-    giaCongNoiBo: 0,
-    xuLyBeMatItem: 0,
-    vanChuyen: 0,
-    phiQLDN: 0,
+    ma_bv: '',
+    phoi_lieu: 0,
+    gia_cong_ngoai: 0,
+    gia_cong_noi_bo: 0,
+    xu_ly_be_mat: 0,
+    van_chuyen: 0,
+    phi_qldn: 0,
   }
 }
 
 onMounted(() => {
+  loadQLPO()
   loadData()
 })
 </script>

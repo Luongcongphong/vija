@@ -76,40 +76,50 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  // Debug log
+  console.log('Router navigation:', { to: to.path, from: from.path })
+  
   // Cập nhật title
   if (to.meta.title) {
     document.title = `${to.meta.title} | Hệ thống quản lý`
   }
 
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
 
-  // Tránh redirect loop: nếu đang redirect đến cùng một trang
+  // Tránh redirect loop
   if (to.path === from.path) {
+    console.log('Same path, skip')
     next()
     return
   }
 
   // Xử lý trang signin
   if (to.path === '/signin') {
-    if (isAuthenticated) {
+    if (isAuthenticated && hasToken) {
+      console.log('Already authenticated, redirect to home')
       next('/')
       return
     }
+    console.log('Go to signin')
     next()
     return
   }
 
   // Xử lý các trang yêu cầu authentication
   if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !hasToken) {
+      console.log('Not authenticated, redirect to signin')
       next('/signin')
       return
     }
+    console.log('Authenticated, proceed')
     next()
     return
   }
 
   // Các trang khác
+  console.log('Other page, proceed')
   next()
 })
 

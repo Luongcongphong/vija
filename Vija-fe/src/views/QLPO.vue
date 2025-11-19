@@ -21,23 +21,32 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="loading">
+              <td colspan="3" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+            </tr>
+            <tr v-else-if="data.length === 0">
+              <td colspan="3" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+            </tr>
             <tr
-              v-for="(item, index) in data"
-              :key="index"
+              v-else
+              v-for="item in data"
+              :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <td class="px-4 py-3">{{ item.po }}</td>
-              <td class="px-4 py-3">{{ item.maBV }}</td>
+              <td class="px-4 py-3">{{ item.ma_bv }}</td>
               <td class="px-4 py-3">
                 <button
-                  @click="editItem(index)"
+                  @click="editItem(item)"
                   class="text-blue-600 hover:text-blue-800 mr-3"
+                  :disabled="loading"
                 >
                   Sửa
                 </button>
                 <button
-                  @click="deleteItem(index)"
+                  @click="deleteItem(item.id!)"
                   class="text-red-600 hover:text-red-800"
+                  :disabled="loading"
                 >
                   Xóa
                 </button>
@@ -70,7 +79,7 @@
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Mã BV</label>
             <input
-              v-model="formData.maBV"
+              v-model="formData.ma_bv"
               type="text"
               required
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
@@ -100,62 +109,86 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { qlpoService, type QLPO } from '@/services/qlpoService'
 
 interface QLPOItem {
+  id?: number
   po: string
-  maBV: string
+  ma_bv: string
 }
 
 const data = ref<QLPOItem[]>([])
 const showAddModal = ref(false)
-const editIndex = ref<number | null>(null)
+const editId = ref<number | null>(null)
+const loading = ref(false)
 const formData = ref({
   po: '',
-  maBV: '',
+  ma_bv: '',
 })
 
-const loadData = () => {
-  const saved = localStorage.getItem('qlpoData')
-  if (saved) {
-    data.value = JSON.parse(saved)
+const loadData = async () => {
+  try {
+    loading.value = true
+    const result = await qlpoService.getAll()
+    data.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu:', error)
+    alert('Không thể tải dữ liệu!')
+  } finally {
+    loading.value = false
   }
 }
 
-const saveData = () => {
-  localStorage.setItem('qlpoData', JSON.stringify(data.value))
-}
-
-const saveItem = () => {
-  if (editIndex.value !== null) {
-    data.value[editIndex.value] = { ...formData.value }
-  } else {
-    data.value.push({ ...formData.value })
+const saveItem = async () => {
+  try {
+    loading.value = true
+    
+    if (editId.value !== null) {
+      await qlpoService.update(editId.value, formData.value)
+    } else {
+      await qlpoService.create(formData.value)
+    }
+    
+    await loadData()
+    closeModal()
+  } catch (error) {
+    console.error('Lỗi khi lưu:', error)
+    alert('Không thể lưu dữ liệu!')
+  } finally {
+    loading.value = false
   }
-
-  saveData()
-  closeModal()
 }
 
-const editItem = (index: number) => {
-  editIndex.value = index
-  const item = data.value[index]
-  formData.value = { ...item }
+const editItem = (item: QLPOItem) => {
+  editId.value = item.id || null
+  formData.value = {
+    po: item.po,
+    ma_bv: item.ma_bv,
+  }
   showAddModal.value = true
 }
 
-const deleteItem = (index: number) => {
+const deleteItem = async (id: number) => {
   if (confirm('Bạn có chắc muốn xóa?')) {
-    data.value.splice(index, 1)
-    saveData()
+    try {
+      loading.value = true
+      await qlpoService.delete(id)
+      await loadData()
+    } catch (error) {
+      console.error('Lỗi khi xóa:', error)
+      alert('Không thể xóa dữ liệu!')
+    } finally {
+      loading.value = false
+    }
   }
 }
 
 const closeModal = () => {
   showAddModal.value = false
-  editIndex.value = null
+  editId.value = null
   formData.value = {
     po: '',
-    maBV: '',
+    ma_bv: '',
   }
 }
 

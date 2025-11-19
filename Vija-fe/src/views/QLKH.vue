@@ -74,21 +74,23 @@
         </h2>
         <form @submit.prevent="saveItem">
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">PO</label>
-            <input
+            <SearchableSelect
               v-model="formData.po"
-              type="text"
-              required
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              :options="poOptions"
+              label="PO"
+              placeholder="Chọn hoặc tìm PO..."
+              :required="true"
+              @update:modelValue="handlePOChange"
             />
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Mã BV</label>
-            <input
+            <SearchableSelect
               v-model="formData.ma_bv"
-              type="text"
-              required
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              :options="maBVOptions"
+              label="Mã BV"
+              placeholder="Chọn hoặc tìm Mã BV..."
+              :required="true"
+              @update:modelValue="handleMaBVChange"
             />
           </div>
           <div class="mb-4">
@@ -97,17 +99,28 @@
               v-model.number="formData.so_luong"
               type="number"
               required
+              @input="handleSoLuongChange"
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Đơn giá</label>
+            <label class="block text-sm font-medium mb-2">
+              Đơn giá
+              <span v-if="donGiaFromQLDM" class="text-xs text-green-600 ml-2">
+                (Tự động từ QLDM - SL: {{ qldmMatchedSoLuong }})
+              </span>
+            </label>
             <input
               v-model.number="formData.don_gia"
               type="number"
               required
+              :readonly="donGiaFromQLDM"
+              :class="donGiaFromQLDM ? 'bg-gray-100 dark:bg-gray-600' : ''"
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
+            <p v-if="donGiaFromQLDM" class="text-xs text-gray-500 mt-1">
+              Áp dụng định mức cho số lượng ≤ {{ qldmMatchedSoLuong }}
+            </p>
           </div>
           <div class="flex justify-end gap-2">
             <button
@@ -131,9 +144,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import { qlkhService, type QLKH } from '@/services/qlkhService'
+import { qlpoService } from '@/services/qlpoService'
+import { qldmService } from '@/services/qldmService'
 
 interface QLKHItem {
   id?: number
@@ -145,15 +161,126 @@ interface QLKHItem {
 }
 
 const data = ref<QLKHItem[]>([])
+const qlpoData = ref<any[]>([])
+const qldmData = ref<any[]>([])
 const showAddModal = ref(false)
 const editId = ref<number | null>(null)
 const loading = ref(false)
+const donGiaFromQLDM = ref(false)
+const qldmMatchedSoLuong = ref(0)
 const formData = ref({
   po: '',
   ma_bv: '',
   so_luong: 0,
   don_gia: 0,
 })
+
+// Tạo options cho PO (unique)
+const poOptions = computed(() => {
+  const uniquePOs = [...new Set(qlpoData.value.map(item => item.po))]
+  return uniquePOs.map(po => ({
+    value: po,
+    label: po
+  }))
+})
+
+// Tạo options cho Mã BV (lọc theo PO đã chọn)
+const maBVOptions = computed(() => {
+  if (!formData.value.po) {
+    return qlpoData.value.map(item => ({
+      value: item.ma_bv,
+      label: `${item.ma_bv} (${item.po})`
+    }))
+  }
+  
+  return qlpoData.value
+    .filter(item => item.po === formData.value.po)
+    .map(item => ({
+      value: item.ma_bv,
+      label: item.ma_bv
+    }))
+})
+
+// Load danh sách QLPO
+const loadQLPO = async () => {
+  try {
+    const result = await qlpoService.getAll()
+    qlpoData.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải QLPO:', error)
+  }
+}
+
+// Load danh sách QLDM
+const loadQLDM = async () => {
+  try {
+    const result = await qldmService.getAll()
+    qldmData.value = result
+  } catch (error) {
+    console.error('Lỗi khi tải QLDM:', error)
+  }
+}
+
+// Khi chọn PO, reset Mã BV và Đơn giá
+const handlePOChange = (po: string) => {
+  formData.value.ma_bv = ''
+  formData.value.so_luong = 0
+  formData.value.don_gia = 0
+  donGiaFromQLDM.value = false
+  qldmMatchedSoLuong.value = 0
+}
+
+// Khi chọn Mã BV, cập nhật đơn giá nếu đã có số lượng
+const handleMaBVChange = (maBV: string) => {
+  if (formData.value.so_luong > 0) {
+    updateDonGiaFromQLDM()
+  }
+}
+
+// Khi thay đổi Số lượng, tự động cập nhật Đơn giá từ QLDM
+const handleSoLuongChange = () => {
+  if (formData.value.po && formData.value.ma_bv && formData.value.so_luong > 0) {
+    updateDonGiaFromQLDM()
+  }
+}
+
+// Hàm tìm và cập nhật Đơn giá từ QLDM dựa trên PO, Mã BV và Số lượng
+const updateDonGiaFromQLDM = () => {
+  // Lọc các định mức phù hợp với PO và Mã BV
+  const matchedItems = qldmData.value.filter(
+    item => item.po === formData.value.po && item.ma_bv === formData.value.ma_bv
+  )
+  
+  if (matchedItems.length === 0) {
+    formData.value.don_gia = 0
+    donGiaFromQLDM.value = false
+    qldmMatchedSoLuong.value = 0
+    return
+  }
+  
+  // Lọc các định mức có số lượng <= số lượng nhập
+  const validItems = matchedItems.filter(
+    item => item.so_luong <= formData.value.so_luong
+  )
+  
+  if (validItems.length === 0) {
+    // Không có định mức phù hợp, có thể nhập thủ công
+    formData.value.don_gia = 0
+    donGiaFromQLDM.value = false
+    qldmMatchedSoLuong.value = 0
+    return
+  }
+  
+  // Tìm định mức có số lượng lớn nhất (gần nhất với số lượng nhập)
+  const bestMatch = validItems.reduce((prev, current) => {
+    return current.so_luong > prev.so_luong ? current : prev
+  })
+  
+  // Cập nhật đơn giá
+  formData.value.don_gia = bestMatch.don_gia
+  donGiaFromQLDM.value = true
+  qldmMatchedSoLuong.value = bestMatch.so_luong
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -231,6 +358,8 @@ const deleteItem = async (id: number) => {
 const closeModal = () => {
   showAddModal.value = false
   editId.value = null
+  donGiaFromQLDM.value = false
+  qldmMatchedSoLuong.value = 0
   formData.value = {
     po: '',
     ma_bv: '',
@@ -240,6 +369,8 @@ const closeModal = () => {
 }
 
 onMounted(() => {
+  loadQLPO()
+  loadQLDM()
   loadData()
 })
 </script>
