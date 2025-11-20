@@ -78,7 +78,7 @@
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
         <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          {{ editIndex !== null ? 'Sửa' : 'Thêm mới' }}
+          {{ editId !== null ? 'Sửa' : 'Thêm mới' }}
         </h2>
         <form @submit.prevent="saveItem">
           <div class="grid grid-cols-2 gap-4">
@@ -278,17 +278,26 @@ const saveItem = async () => {
   try {
     loading.value = true
     
+    console.log('Saving QLNB:', {
+      editId: editId.value,
+      formData: formData.value
+    })
+    
     if (editId.value !== null) {
+      console.log('Updating QLNB ID:', editId.value)
       await qlnbService.update(editId.value, formData.value)
     } else {
+      console.log('Creating new QLNB')
       await qlnbService.create(formData.value)
     }
     
+    console.log('✅ Saved successfully')
     await loadData()
     closeModal()
-  } catch (error) {
-    console.error('Lỗi khi lưu:', error)
-    alert('Không thể lưu dữ liệu!')
+  } catch (error: any) {
+    console.error('❌ Lỗi khi lưu:', error)
+    console.error('Error response:', error.response?.data)
+    alert(`Không thể lưu dữ liệu! ${error.response?.data?.message || error.message}`)
   } finally {
     loading.value = false
   }
