@@ -11,7 +11,7 @@
         <slot></slot>
       </div>
       <!-- Footer -->
-      <footer class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 pt-0">
+      <!-- <footer class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 pt-0">
         <p class="text-sm text-center text-gray-500 dark:text-gray-400">
           Designed and Developed by 
           <a 
@@ -33,7 +33,7 @@
           </a>
           .
         </p>
-      </footer>
+      </footer> -->
     </div>
   </div>
 </template>
