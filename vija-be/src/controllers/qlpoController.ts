@@ -2,6 +2,7 @@ import { Response } from 'express';
 import pool from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 
+// Lấy tất cả PO
 export const getAllQLPO = async (req: AuthRequest, res: Response) => {
   try {
     const [rows] = await pool.query('SELECT * FROM qlpo ORDER BY created_at DESC');
@@ -11,6 +12,7 @@ export const getAllQLPO = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Lấy PO theo ID
 export const getQLPOById = async (req: AuthRequest, res: Response) => {
   try {
     const [rows]: any = await pool.query('SELECT * FROM qlpo WHERE id = ?', [req.params.id]);
@@ -25,13 +27,39 @@ export const getQLPOById = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Lấy tất cả PO theo Mã PO
+export const getQLPOByMaPO = async (req: AuthRequest, res: Response) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM qlpo WHERE ma_po = ? ORDER BY created_at ASC',
+      [req.params.ma_po]
+    );
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+// Lấy danh sách Mã PO (unique)
+export const getAllMaPO = async (req: AuthRequest, res: Response) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT DISTINCT ma_po FROM qlpo ORDER BY ma_po DESC'
+    );
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+// Tạo PO mới
 export const createQLPO = async (req: AuthRequest, res: Response) => {
   try {
-    const { po, ma_bv } = req.body;
+    const { ma_po, ma_bv, ngay_tao, ngay_giao } = req.body;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlpo (po, ma_bv) VALUES (?, ?)',
-      [po, ma_bv]
+      'INSERT INTO qlpo (ma_po, ma_bv, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?)',
+      [ma_po, ma_bv, ngay_tao, ngay_giao]
     );
 
     res.status(201).json({
@@ -43,13 +71,14 @@ export const createQLPO = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Cập nhật PO
 export const updateQLPO = async (req: AuthRequest, res: Response) => {
   try {
-    const { po, ma_bv } = req.body;
+    const { ma_po, ma_bv, ngay_tao, ngay_giao } = req.body;
 
     await pool.query(
-      'UPDATE qlpo SET po = ?, ma_bv = ? WHERE id = ?',
-      [po, ma_bv, req.params.id]
+      'UPDATE qlpo SET ma_po = ?, ma_bv = ?, ngay_tao = ?, ngay_giao = ? WHERE id = ?',
+      [ma_po, ma_bv, ngay_tao, ngay_giao, req.params.id]
     );
 
     res.json({ message: 'Cập nhật thành công' });
@@ -58,6 +87,7 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Xóa PO
 export const deleteQLPO = async (req: AuthRequest, res: Response) => {
   try {
     await pool.query('DELETE FROM qlpo WHERE id = ?', [req.params.id]);

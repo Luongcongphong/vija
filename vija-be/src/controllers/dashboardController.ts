@@ -4,35 +4,56 @@ import { AuthRequest } from '../middleware/auth';
 
 export const getDashboard = async (req: AuthRequest, res: Response) => {
   try {
-    const query = `
+    const { so_bg } = req.query;
+    
+    let query = `
       SELECT 
-        k.id,
-        k.po,
-        k.ma_bv,
-        k.so_luong,
-        k.don_gia,
-        k.thanh_tien,
-        COALESCE(n.phoi_lieu, 0) as phoi_lieu,
-        COALESCE(n.gia_cong_ngoai, 0) as gia_cong_ngoai,
-        COALESCE(n.gia_cong_noi_bo, 0) as gia_cong_noi_bo,
-        COALESCE(n.xu_ly_be_mat, 0) as xu_ly_be_mat,
-        COALESCE(n.van_chuyen, 0) as van_chuyen,
-        COALESCE(n.phi_qldn, 0) as phi_qldn,
-        COALESCE(n.tong_phi, 0) as tong_phi,
-        (k.thanh_tien - COALESCE(n.tong_phi, 0)) as loi_nhuan,
+        bg.id,
+        bg.stt,
+        bg.so_bg,
+        (SELECT GROUP_CONCAT(DISTINCT po.ma_po) 
+         FROM qlpo po 
+         WHERE po.ma_bv = bg.ma_bv) as ma_po,
+        bg.ma_bv,
+        bg.so_luong,
+        bg.don_gia,
+        bg.thanh_tien,
+        COALESCE(nb.phoi_lieu, 0) as phoi_lieu,
+        COALESCE(nb.gia_cong_ngoai, 0) as gia_cong_ngoai,
+        COALESCE(nb.gia_cong_noi_bo, 0) as gia_cong_noi_bo,
+        COALESCE(nb.xu_ly_be_mat, 0) as xu_ly_be_mat,
+        COALESCE(nb.van_chuyen, 0) as van_chuyen,
+        COALESCE(nb.phi_qldn, 0) as phi_qldn,
+        COALESCE(nb.tong_phi, 0) as tong_phi,
+        (bg.thanh_tien - COALESCE(nb.tong_phi, 0)) as loi_nhuan,
         CASE 
-          WHEN k.thanh_tien > 0 THEN ROUND(((k.thanh_tien - COALESCE(n.tong_phi, 0)) / k.thanh_tien * 100), 2)
+          WHEN bg.thanh_tien > 0 THEN 
+            ROUND(((bg.thanh_tien - COALESCE(nb.tong_phi, 0)) / bg.thanh_tien * 100), 2)
           ELSE 0 
         END as ty_le,
-        k.created_at as ngay_tao
-      FROM qlkh k
-      LEFT JOIN qlnb n ON k.po = n.po AND k.ma_bv = n.ma_bv
-      ORDER BY k.created_at DESC
+        bg.created_at as ngay_tao
+      FROM qlbg bg
+      LEFT JOIN qlnb nb ON bg.so_bg = nb.so_bg AND bg.ma_bv = nb.ma_bv
+      WHERE EXISTS (
+        SELECT 1 FROM qlpo po WHERE po.ma_bv = bg.ma_bv
+      )
     `;
+    
+    // Filter by Số BG if provided
+    if (so_bg) {
+      query += ` AND bg.so_bg = ?`;
+    }
+    
+    query += ` ORDER BY bg.stt DESC`;
 
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(query, so_bg ? [so_bg] : []);
     res.json(rows);
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+  } catch (error: any) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ 
+      message: 'Lỗi server', 
+      error: error.message,
+      details: error.sqlMessage 
+    });
   }
 };

@@ -27,7 +27,7 @@ export const getQLNBById = async (req: AuthRequest, res: Response) => {
 
 export const createQLNB = async (req: AuthRequest, res: Response) => {
   try {
-    const { po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
+    const { so_bg, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
     
     // Convert to numbers to avoid string concatenation
     const phoiLieuNum = Number(phoi_lieu) || 0;
@@ -40,8 +40,8 @@ export const createQLNB = async (req: AuthRequest, res: Response) => {
     const tong_phi = phoiLieuNum + giaCongNgoaiNum + giaCongNoiBoNum + xuLyBeMatNum + vanChuyenNum + phiQLDNNum;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlnb (po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn, tong_phi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [po, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi]
+      'INSERT INTO qlnb (so_bg, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn, tong_phi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [so_bg, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi]
     );
 
     res.status(201).json({
@@ -55,17 +55,11 @@ export const createQLNB = async (req: AuthRequest, res: Response) => {
 
 export const updateQLNB = async (req: AuthRequest, res: Response) => {
   try {
-    console.log('=== UPDATE QLNB ===');
-    console.log('ID:', req.params.id);
-    console.log('Body:', req.body);
-    console.log('User:', req.userId, 'Role:', req.userRole);
-    
-    const { po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
+    const { so_bg, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
     
     // Validation
-    if (!po || !ma_bv) {
-      console.log('❌ Validation failed: Missing PO or ma_bv');
-      return res.status(400).json({ message: 'PO và Mã BV là bắt buộc' });
+    if (!so_bg || !ma_bv) {
+      return res.status(400).json({ message: 'Số BG và Mã BV là bắt buộc' });
     }
     
     // Convert to numbers to avoid string concatenation
@@ -77,31 +71,22 @@ export const updateQLNB = async (req: AuthRequest, res: Response) => {
     const phiQLDNNum = Number(phi_qldn) || 0;
     
     const tong_phi = phoiLieuNum + giaCongNgoaiNum + giaCongNoiBoNum + xuLyBeMatNum + vanChuyenNum + phiQLDNNum;
-    
-    console.log('Tổng phí:', tong_phi);
 
     const [result]: any = await pool.query(
-      'UPDATE qlnb SET po = ?, ma_bv = ?, phoi_lieu = ?, gia_cong_ngoai = ?, gia_cong_noi_bo = ?, xu_ly_be_mat = ?, van_chuyen = ?, phi_qldn = ?, tong_phi = ? WHERE id = ?',
-      [po, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi, req.params.id]
+      'UPDATE qlnb SET so_bg = ?, ma_bv = ?, phoi_lieu = ?, gia_cong_ngoai = ?, gia_cong_noi_bo = ?, xu_ly_be_mat = ?, van_chuyen = ?, phi_qldn = ?, tong_phi = ? WHERE id = ?',
+      [so_bg, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi, req.params.id]
     );
 
-    console.log('Query result:', result);
-    console.log('Affected rows:', result.affectedRows);
-
     if (result.affectedRows === 0) {
-      console.log('❌ No rows affected');
       return res.status(404).json({ message: 'Không tìm thấy bản ghi để cập nhật' });
     }
 
-    console.log('✅ Update successful');
     res.json({ message: 'Cập nhật thành công' });
   } catch (error: any) {
-    console.error('❌ Error updating QLNB:', error);
-    console.error('Error stack:', error.stack);
+    console.error('Error updating QLNB:', error);
     res.status(500).json({ 
       message: 'Lỗi server', 
-      error: error.message,
-      details: error.sqlMessage || error.toString()
+      error: error.message
     });
   }
 };

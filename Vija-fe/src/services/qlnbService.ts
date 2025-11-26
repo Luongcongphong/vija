@@ -2,7 +2,7 @@ import api from './api';
 
 export interface QLNB {
   id?: number;
-  po: string;
+  so_bg: string;
   ma_bv: string;
   phoi_lieu: number;
   gia_cong_ngoai: number;

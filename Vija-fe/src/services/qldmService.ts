@@ -2,37 +2,30 @@ import api from './api';
 
 export interface QLDM {
   id?: number;
-  po: string;
   ma_bv: string;
   so_luong: number;
   don_gia: number;
-  dinh_muc: number;
   created_at?: string;
+  updated_at?: string;
 }
 
 export const qldmService = {
-  async getAll(): Promise<QLDM[]> {
-    const response = await api.get('/qldm');
-    return response.data;
-  },
+  // Lấy tất cả định mức
+  getAll: () => api.get<QLDM[]>('/qldm'),
 
-  async getById(id: number): Promise<QLDM> {
-    const response = await api.get(`/qldm/${id}`);
-    return response.data;
-  },
+  // Lấy định mức theo ID
+  getById: (id: number) => api.get<QLDM>(`/qldm/${id}`),
 
-  async create(data: QLDM): Promise<any> {
-    const response = await api.post('/qldm', data);
-    return response.data;
-  },
+  // Lấy danh sách Mã BV
+  getAllMaBV: () => api.get<{ ma_bv: string }[]>('/qldm/ma-bv'),
 
-  async update(id: number, data: QLDM): Promise<any> {
-    const response = await api.put(`/qldm/${id}`, data);
-    return response.data;
-  },
+  // Tạo định mức mới
+  create: (data: Partial<QLDM>) => api.post<{ message: string; id: number }>('/qldm', data),
 
-  async delete(id: number): Promise<any> {
-    const response = await api.delete(`/qldm/${id}`);
-    return response.data;
-  },
+  // Cập nhật định mức
+  update: (id: number, data: Partial<QLDM>) => 
+    api.put<{ message: string }>(`/qldm/${id}`, data),
+
+  // Xóa định mức
+  delete: (id: number) => api.delete<{ message: string }>(`/qldm/${id}`)
 };

@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
-import qlkhRoutes from './routes/qlkhRoutes';
+// import qlkhRoutes from './routes/qlkhRoutes'; // Đã thay thế bởi QLBG
+import qlbgRoutes from './routes/qlbgRoutes';
 import qlnbRoutes from './routes/qlnbRoutes';
 import qldmRoutes from './routes/qldmRoutes';
 import qlpoRoutes from './routes/qlpoRoutes';
@@ -19,7 +20,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/qlkh', qlkhRoutes);
+// app.use('/api/qlkh', qlkhRoutes); // Đã thay thế bởi QLBG
+app.use('/api/qlbg', qlbgRoutes);
 app.use('/api/qlnb', qlnbRoutes);
 app.use('/api/qldm', qldmRoutes);
 app.use('/api/qlpo', qlpoRoutes);

@@ -248,24 +248,24 @@ const menuGroups = [
         path: "/",
       },
       {
-        icon: UserCircleIcon,
-        name: "QLKH",
-        path: "/qlkh",
-      },
-      {
-        icon: TableIcon,
-        name: "QLNB",
-        path: "/qlnb",
-      },
-      {
         icon: ListIcon,
         name: "QLDM",
         path: "/qldm",
       },
       {
         icon: DocsIcon,
+        name: "QLBG",
+        path: "/qlbg",
+      },
+      {
+        icon: BoxCubeIcon,
         name: "QLPO",
         path: "/qlpo",
+      },
+      {
+        icon: TableIcon,
+        name: "QLNB",
+        path: "/qlnb",
       },
       {
         icon: UserCircleIcon,

@@ -24,11 +24,11 @@ const router = createRouter({
       },
     },
     {
-      path: '/qlkh',
-      name: 'QLKH',
-      component: () => import('../views/QLKH.vue'),
+      path: '/qlbg',
+      name: 'QLBG',
+      component: () => import('../views/QLBG.vue'),
       meta: {
-        title: 'Quản lý Khách hàng',
+        title: 'Quản lý Báo giá',
         requiresAuth: true,
       },
     },

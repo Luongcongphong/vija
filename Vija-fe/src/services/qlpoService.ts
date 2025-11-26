@@ -2,34 +2,34 @@ import api from './api';
 
 export interface QLPO {
   id?: number;
-  po: string;
+  ma_po: string;
   ma_bv: string;
+  ngay_tao?: string;
+  ngay_giao?: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export const qlpoService = {
-  async getAll(): Promise<QLPO[]> {
-    const response = await api.get('/qlpo');
-    return response.data;
-  },
+  // Lấy tất cả PO
+  getAll: () => api.get<QLPO[]>('/qlpo'),
 
-  async getById(id: number): Promise<QLPO> {
-    const response = await api.get(`/qlpo/${id}`);
-    return response.data;
-  },
+  // Lấy PO theo ID
+  getById: (id: number) => api.get<QLPO>(`/qlpo/${id}`),
 
-  async create(data: QLPO): Promise<any> {
-    const response = await api.post('/qlpo', data);
-    return response.data;
-  },
+  // Lấy PO theo Mã PO
+  getByMaPO: (ma_po: string) => api.get<QLPO[]>(`/qlpo/by-ma-po/${ma_po}`),
 
-  async update(id: number, data: QLPO): Promise<any> {
-    const response = await api.put(`/qlpo/${id}`, data);
-    return response.data;
-  },
+  // Lấy danh sách Mã PO
+  getAllMaPO: () => api.get<{ ma_po: string }[]>('/qlpo/ma-po'),
 
-  async delete(id: number): Promise<any> {
-    const response = await api.delete(`/qlpo/${id}`);
-    return response.data;
-  },
+  // Tạo PO mới
+  create: (data: Partial<QLPO>) => api.post<{ message: string; id: number }>('/qlpo', data),
+
+  // Cập nhật PO
+  update: (id: number, data: Partial<QLPO>) => 
+    api.put<{ message: string }>(`/qlpo/${id}`, data),
+
+  // Xóa PO
+  delete: (id: number) => api.delete<{ message: string }>(`/qlpo/${id}`)
 };

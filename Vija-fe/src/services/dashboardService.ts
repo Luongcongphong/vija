@@ -20,8 +20,8 @@ export interface DashboardData {
 }
 
 export const dashboardService = {
-  async getData(): Promise<DashboardData[]> {
-    const response = await api.get('/dashboard');
-    return response.data;
+  getData: (so_bg?: string) => {
+    const params = so_bg ? { so_bg } : {}
+    return api.get('/dashboard', { params })
   },
 };
