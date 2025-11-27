@@ -39,7 +39,7 @@
         </button>
       </div>
       <p v-if="filterMaPO" class="text-xs text-green-600 mt-2">
-        Đang hiển thị: {{ filteredDashboardData.length }} kết quả cho {{ filterMaPO }}
+        Đang hiển thị: {{ groupedDashboardData.length }} dòng (bao gồm tổng) cho {{ filterMaPO }}
       </p>
     </div>
 
@@ -73,22 +73,29 @@
             </tr>
             <tr
               v-else
-              v-for="item in filteredDashboardData"
+              v-for="item in groupedDashboardData"
               :key="item.id"
-              class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              :class="[
+                'border-b dark:border-gray-700',
+                item.isTotal 
+                  ? 'bg-blue-50 dark:bg-blue-900 font-bold border-t-2 border-blue-300 dark:border-blue-700' 
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+              ]"
             >
-              <td class="px-4 py-3 font-medium text-blue-600">{{ item.ma_po || '-' }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold text-blue-700 dark:text-blue-300' : 'font-medium text-blue-600'">
+                {{ item.ma_po || '-' }}
+              </td>
               <td class="px-4 py-3">{{ item.ma_bv }}</td>
-              <td class="px-4 py-3">{{ item.so_luong }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.don_gia) }}</td>
-              <td class="px-4 py-3 font-medium">{{ formatCurrency(item.thanh_tien) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.van_chuyen) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phi_qldn) }}</td>
-              <td class="px-4 py-3 font-medium">{{ formatCurrency(item.tong_phi) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ item.so_luong }}</td>
+              <td class="px-4 py-3">{{ item.isTotal ? '' : formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : 'font-medium'">{{ formatCurrency(item.thanh_tien) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phoi_lieu) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.van_chuyen) }}</td>
+              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phi_qldn) }}</td>
+              <td class="px-4 py-3 font-bold">{{ formatCurrency(item.tong_phi) }}</td>
               <td class="px-4 py-3 font-bold" :class="item.loi_nhuan >= 0 ? 'text-green-600' : 'text-red-600'">
                 {{ formatCurrency(item.loi_nhuan) }}
               </td>
@@ -160,6 +167,74 @@ const filteredDashboardData = computed(() => {
   )
 })
 
+// Group data by Mã PO and add summary rows
+const groupedDashboardData = computed(() => {
+  const filtered = filteredDashboardData.value
+  if (filtered.length === 0) return []
+  
+  const result: Array<DashboardItem & { isTotal?: boolean }> = []
+  const groups: { [key: string]: DashboardItem[] } = {}
+  
+  // Group by ma_po
+  filtered.forEach(item => {
+    const maPO = item.ma_po || 'Không có PO'
+    if (!groups[maPO]) {
+      groups[maPO] = []
+    }
+    groups[maPO].push(item)
+  })
+  
+  // Add items and summary for each group
+  Object.keys(groups).sort().forEach(maPO => {
+    const items = groups[maPO]
+    
+    // Add all items in group
+    items.forEach(item => {
+      result.push({ ...item, isTotal: false })
+    })
+    
+    // Calculate totals (convert to number to handle string values from backend)
+    const totalSoLuong = items.reduce((sum, item) => sum + Number(item.so_luong || 0), 0)
+    const totalThanhTien = items.reduce((sum, item) => sum + Number(item.thanh_tien || 0), 0)
+    const totalPhoiLieu = items.reduce((sum, item) => sum + Number(item.phoi_lieu || 0), 0)
+    const totalGiaCongNgoai = items.reduce((sum, item) => sum + Number(item.gia_cong_ngoai || 0), 0)
+    const totalGiaCongNoiBo = items.reduce((sum, item) => sum + Number(item.gia_cong_noi_bo || 0), 0)
+    const totalXuLyBeMat = items.reduce((sum, item) => sum + Number(item.xu_ly_be_mat || 0), 0)
+    const totalVanChuyen = items.reduce((sum, item) => sum + Number(item.van_chuyen || 0), 0)
+    const totalPhiQLDN = items.reduce((sum, item) => sum + Number(item.phi_qldn || 0), 0)
+    const totalTongPhi = items.reduce((sum, item) => sum + Number(item.tong_phi || 0), 0)
+    const totalLoiNhuan = items.reduce((sum, item) => sum + Number(item.loi_nhuan || 0), 0)
+    const avgTyLe = totalThanhTien > 0 
+      ? Math.round((totalLoiNhuan / totalThanhTien * 100) * 100) / 100 
+      : 0
+    
+    // Add summary row
+    result.push({
+      id: -Math.abs(maPO.charCodeAt(0) + Date.now()),
+      stt: 0,
+      so_bg: '',
+      ma_po: `TỔNG ${maPO}`,
+      ma_bv: '',
+      so_luong: totalSoLuong,
+      don_gia: 0,
+      thanh_tien: totalThanhTien,
+      phoi_lieu: totalPhoiLieu,
+      gia_cong_ngoai: totalGiaCongNgoai,
+      gia_cong_noi_bo: totalGiaCongNoiBo,
+      xu_ly_be_mat: totalXuLyBeMat,
+      van_chuyen: totalVanChuyen,
+      phi_qldn: totalPhiQLDN,
+      tong_phi: totalTongPhi,
+      loi_nhuan: totalLoiNhuan,
+      ty_le: avgTyLe,
+      ngay_tao: '',
+      isTotal: true
+    })
+  })
+  
+  return result
+})
+
 const loadMaPOList = async () => {
   try {
     const response = await qlpoService.getAllMaPO()
@@ -189,7 +264,7 @@ const clearFilters = () => {
 }
 
 const exportToExcel = () => {
-  const dataToExport = filteredDashboardData.value
+  const dataToExport = groupedDashboardData.value
   
   if (dataToExport.length === 0) {
     alert('Không có dữ liệu để export!')
@@ -200,7 +275,7 @@ const exportToExcel = () => {
     'Mã PO': item.ma_po || '-',
     'Mã BV': item.ma_bv,
     'Số Lượng': item.so_luong,
-    'Đơn giá': item.don_gia,
+    'Đơn giá': item.isTotal ? '' : item.don_gia,
     'Thành Tiền': item.thanh_tien,
     'Phôi Liệu': item.phoi_lieu,
     'Gia Công Ngoài': item.gia_cong_ngoai,
