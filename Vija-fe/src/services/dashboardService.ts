@@ -20,8 +20,7 @@ export interface DashboardData {
 }
 
 export const dashboardService = {
-  getData: (so_bg?: string) => {
-    const params = so_bg ? { so_bg } : {}
-    return api.get('/dashboard', { params })
+  getData: () => {
+    return api.get('/dashboard')
   },
 };

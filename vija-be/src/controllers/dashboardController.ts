@@ -4,16 +4,12 @@ import { AuthRequest } from '../middleware/auth';
 
 export const getDashboard = async (req: AuthRequest, res: Response) => {
   try {
-    const { so_bg } = req.query;
-    
-    let query = `
+    const query = `
       SELECT 
-        bg.id,
+        CONCAT(bg.id, '-', po.id) as id,
         bg.stt,
         bg.so_bg,
-        (SELECT GROUP_CONCAT(DISTINCT po.ma_po) 
-         FROM qlpo po 
-         WHERE po.ma_bv = bg.ma_bv) as ma_po,
+        po.ma_po,
         bg.ma_bv,
         bg.so_luong,
         bg.don_gia,
@@ -33,20 +29,14 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
         END as ty_le,
         bg.created_at as ngay_tao
       FROM qlbg bg
-      LEFT JOIN qlnb nb ON bg.so_bg = nb.so_bg AND bg.ma_bv = nb.ma_bv
-      WHERE EXISTS (
-        SELECT 1 FROM qlpo po WHERE po.ma_bv = bg.ma_bv
-      )
+      INNER JOIN qlpo po ON po.ma_bv = bg.ma_bv
+      LEFT JOIN qlnb nb ON nb.ma_po = po.ma_po AND nb.ma_bv = bg.ma_bv
+      ORDER BY 
+        CAST(REGEXP_REPLACE(po.ma_po, '[^0-9]', '') AS UNSIGNED) ASC,
+        po.ma_po ASC
     `;
-    
-    // Filter by Số BG if provided
-    if (so_bg) {
-      query += ` AND bg.so_bg = ?`;
-    }
-    
-    query += ` ORDER BY bg.stt DESC`;
 
-    const [rows] = await pool.query(query, so_bg ? [so_bg] : []);
+    const [rows] = await pool.query(query);
     res.json(rows);
   } catch (error: any) {
     console.error('Dashboard error:', error);

@@ -27,7 +27,7 @@ export const getQLNBById = async (req: AuthRequest, res: Response) => {
 
 export const createQLNB = async (req: AuthRequest, res: Response) => {
   try {
-    const { so_bg, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
+    const { ma_po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
     
     // Convert to numbers to avoid string concatenation
     const phoiLieuNum = Number(phoi_lieu) || 0;
@@ -40,8 +40,8 @@ export const createQLNB = async (req: AuthRequest, res: Response) => {
     const tong_phi = phoiLieuNum + giaCongNgoaiNum + giaCongNoiBoNum + xuLyBeMatNum + vanChuyenNum + phiQLDNNum;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlnb (so_bg, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn, tong_phi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [so_bg, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi]
+      'INSERT INTO qlnb (ma_po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn, tong_phi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [ma_po, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi]
     );
 
     res.status(201).json({
@@ -55,11 +55,11 @@ export const createQLNB = async (req: AuthRequest, res: Response) => {
 
 export const updateQLNB = async (req: AuthRequest, res: Response) => {
   try {
-    const { so_bg, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
+    const { ma_po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
     
     // Validation
-    if (!so_bg || !ma_bv) {
-      return res.status(400).json({ message: 'Số BG và Mã BV là bắt buộc' });
+    if (!ma_po || !ma_bv) {
+      return res.status(400).json({ message: 'Mã PO và Mã BV là bắt buộc' });
     }
     
     // Convert to numbers to avoid string concatenation
@@ -73,8 +73,8 @@ export const updateQLNB = async (req: AuthRequest, res: Response) => {
     const tong_phi = phoiLieuNum + giaCongNgoaiNum + giaCongNoiBoNum + xuLyBeMatNum + vanChuyenNum + phiQLDNNum;
 
     const [result]: any = await pool.query(
-      'UPDATE qlnb SET so_bg = ?, ma_bv = ?, phoi_lieu = ?, gia_cong_ngoai = ?, gia_cong_noi_bo = ?, xu_ly_be_mat = ?, van_chuyen = ?, phi_qldn = ?, tong_phi = ? WHERE id = ?',
-      [so_bg, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi, req.params.id]
+      'UPDATE qlnb SET ma_po = ?, ma_bv = ?, phoi_lieu = ?, gia_cong_ngoai = ?, gia_cong_noi_bo = ?, xu_ly_be_mat = ?, van_chuyen = ?, phi_qldn = ?, tong_phi = ? WHERE id = ?',
+      [ma_po, ma_bv, phoiLieuNum, giaCongNgoaiNum, giaCongNoiBoNum, xuLyBeMatNum, vanChuyenNum, phiQLDNNum, tong_phi, req.params.id]
     );
 
     if (result.affectedRows === 0) {

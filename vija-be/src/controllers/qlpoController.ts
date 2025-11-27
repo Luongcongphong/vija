@@ -57,33 +57,105 @@ export const createQLPO = async (req: AuthRequest, res: Response) => {
   try {
     const { ma_po, ma_bv, ngay_tao, ngay_giao } = req.body;
 
+    // Validation
+    if (!ma_po || !ma_bv) {
+      return res.status(400).json({ message: 'Mã PO và Mã BV là bắt buộc' });
+    }
+
+    // Convert date format from ISO to MySQL format (YYYY-MM-DD)
+    const formatDate = (dateStr: string | null | undefined): string | null => {
+      if (!dateStr) return null;
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return null;
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      } catch {
+        return null;
+      }
+    };
+
+    const formattedNgayTao = formatDate(ngay_tao);
+    const formattedNgayGiao = formatDate(ngay_giao);
+
     const [result]: any = await pool.query(
       'INSERT INTO qlpo (ma_po, ma_bv, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?)',
-      [ma_po, ma_bv, ngay_tao, ngay_giao]
+      [ma_po, ma_bv, formattedNgayTao, formattedNgayGiao]
     );
 
     res.status(201).json({
       message: 'Tạo thành công',
       id: result.insertId
     });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+  } catch (error: any) {
+    console.error('Error creating QLPO:', error);
+    res.status(500).json({ 
+      message: 'Lỗi server', 
+      error: error.message,
+      sqlMessage: error.sqlMessage 
+    });
   }
 };
 
 // Cập nhật PO
 export const updateQLPO = async (req: AuthRequest, res: Response) => {
   try {
+    console.log('=== UPDATE QLPO ===');
+    console.log('ID:', req.params.id);
+    console.log('Body:', req.body);
+    
     const { ma_po, ma_bv, ngay_tao, ngay_giao } = req.body;
 
-    await pool.query(
+    // Validation
+    if (!ma_po || !ma_bv) {
+      console.log('Validation failed: Missing ma_po or ma_bv');
+      return res.status(400).json({ message: 'Mã PO và Mã BV là bắt buộc' });
+    }
+
+    // Convert date format from ISO to MySQL format (YYYY-MM-DD)
+    const formatDate = (dateStr: string | null | undefined): string | null => {
+      if (!dateStr) return null;
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return null;
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      } catch {
+        return null;
+      }
+    };
+
+    const formattedNgayTao = formatDate(ngay_tao);
+    const formattedNgayGiao = formatDate(ngay_giao);
+
+    console.log('Formatted dates:', { ngay_tao: formattedNgayTao, ngay_giao: formattedNgayGiao });
+    console.log('Executing UPDATE query...');
+    
+    const [result]: any = await pool.query(
       'UPDATE qlpo SET ma_po = ?, ma_bv = ?, ngay_tao = ?, ngay_giao = ? WHERE id = ?',
-      [ma_po, ma_bv, ngay_tao, ngay_giao, req.params.id]
+      [ma_po, ma_bv, formattedNgayTao, formattedNgayGiao, req.params.id]
     );
 
+    console.log('Update result:', result);
+
+    if (result.affectedRows === 0) {
+      console.log('No rows affected - PO not found');
+      return res.status(404).json({ message: 'Không tìm thấy PO để cập nhật' });
+    }
+
+    console.log('Update successful');
     res.json({ message: 'Cập nhật thành công' });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
+  } catch (error: any) {
+    console.error('=== ERROR UPDATING QLPO ===');
+    console.error('Error:', error);
+    console.error('Message:', error.message);
+    console.error('SQL Message:', error.sqlMessage);
+    console.error('SQL State:', error.sqlState);
+    console.error('Errno:', error.errno);
+    res.status(500).json({ 
+      message: 'Lỗi server', 
+      error: error.message,
+      sqlMessage: error.sqlMessage,
+      errno: error.errno
+    });
   }
 };
 

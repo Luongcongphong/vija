@@ -10,12 +10,44 @@
       </button>
     </div>
 
+    <!-- Filter with Search -->
+    <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
+      <div class="flex gap-2">
+        <input
+          v-model="searchMaPO"
+          type="text"
+          placeholder="Tìm kiếm Mã PO..."
+          class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+        />
+        <select
+          v-model="filterMaPO"
+          class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+        >
+          <option value="">Tất cả</option>
+          <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
+            {{ item.ma_po }}
+          </option>
+        </select>
+        <button
+          v-if="filterMaPO"
+          @click="clearFilter"
+          class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+        >
+          Xóa lọc
+        </button>
+      </div>
+      <p v-if="filterMaPO" class="text-xs text-green-600 mt-2">
+        Đang hiển thị: {{ filteredData.length }} kết quả cho {{ filterMaPO }}
+      </p>
+    </div>
+
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-4 py-3">Số BG</th>
+              <th class="px-4 py-3">Mã PO</th>
               <th class="px-4 py-3">Mã BV</th>
               <th class="px-4 py-3">Phôi Liệu</th>
               <th class="px-4 py-3">Gia Công Ngoài</th>
@@ -36,11 +68,11 @@
             </tr>
             <tr
               v-else
-              v-for="item in data"
+              v-for="item in filteredData"
               :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              <td class="px-4 py-3">{{ item.so_bg }}</td>
+              <td class="px-4 py-3">{{ item.ma_po }}</td>
               <td class="px-4 py-3">{{ item.ma_bv }}</td>
               <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
               <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
@@ -84,12 +116,12 @@
           <div class="grid grid-cols-2 gap-4">
             <div class="mb-4">
               <SearchableSelect
-                v-model="formData.so_bg"
-                :options="soBGOptions"
-                label="Số BG"
-                placeholder="Chọn hoặc tìm Số BG..."
+                v-model="formData.ma_po"
+                :options="maPOOptions"
+                label="Mã PO"
+                placeholder="Chọn hoặc tìm Mã PO..."
                 :required="true"
-                @update:modelValue="handleSoBGChange"
+                @update:modelValue="handleMaPOChange"
               />
             </div>
             <div class="mb-4">
@@ -193,28 +225,18 @@ import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import { qlnbService, type QLNB } from '@/services/qlnbService'
-import { qlbgService } from '@/services/qlbgService'
+import { qlpoService } from '@/services/qlpoService'
 
-interface QLNBItem {
-  id?: number
-  so_bg: string
-  ma_bv: string
-  phoi_lieu: number
-  gia_cong_ngoai: number
-  gia_cong_noi_bo: number
-  xu_ly_be_mat: number
-  van_chuyen: number
-  phi_qldn: number
-  tong_phi?: number
-}
-
-const data = ref<QLNBItem[]>([])
-const qlbgData = ref<any[]>([])
+const data = ref<QLNB[]>([])
+const qlpoData = ref<Array<{ ma_po: string; ma_bv: string }>>([])
+const maPOList = ref<{ ma_po: string }[]>([])
+const filterMaPO = ref('')
+const searchMaPO = ref('')
 const showAddModal = ref(false)
 const editId = ref<number | null>(null)
 const loading = ref(false)
 const formData = ref({
-  so_bg: '',
+  ma_po: '',
   ma_bv: '',
   phoi_lieu: 0,
   gia_cong_ngoai: 0,
@@ -224,26 +246,45 @@ const formData = ref({
   phi_qldn: 0,
 })
 
-// Tạo options cho Số BG
-const soBGOptions = computed(() => {
-  const uniqueSoBG = [...new Set(qlbgData.value.map(item => item.so_bg))]
-  return uniqueSoBG.map(so_bg => ({
-    value: so_bg,
-    label: so_bg
+// Filter Mã PO list by search
+const filteredMaPOList = computed(() => {
+  if (!searchMaPO.value) return maPOList.value
+  return maPOList.value.filter(item => 
+    item.ma_po.toLowerCase().includes(searchMaPO.value.toLowerCase())
+  )
+})
+
+// Filter data by selected Mã PO
+const filteredData = computed(() => {
+  if (!filterMaPO.value) return data.value
+  return data.value.filter(item => item.ma_po === filterMaPO.value)
+})
+
+const clearFilter = () => {
+  filterMaPO.value = ''
+  searchMaPO.value = ''
+}
+
+// Tạo options cho Mã PO
+const maPOOptions = computed(() => {
+  const uniqueMaPO = [...new Set(qlpoData.value.map(item => item.ma_po))]
+  return uniqueMaPO.map(ma_po => ({
+    value: ma_po,
+    label: ma_po
   }))
 })
 
 // Tạo options cho Mã BV
 const maBVOptions = computed(() => {
-  if (!formData.value.so_bg) {
-    return qlbgData.value.map(item => ({
+  if (!formData.value.ma_po) {
+    return qlpoData.value.map(item => ({
       value: item.ma_bv,
-      label: `${item.ma_bv} (${item.so_bg})`
+      label: `${item.ma_bv} (${item.ma_po})`
     }))
   }
   
-  return qlbgData.value
-    .filter(item => item.so_bg === formData.value.so_bg)
+  return qlpoData.value
+    .filter(item => item.ma_po === formData.value.ma_po)
     .map(item => ({
       value: item.ma_bv,
       label: item.ma_bv
@@ -260,18 +301,27 @@ const tongPhi = computed(() => {
          formData.value.phi_qldn
 })
 
-// Load QLBG
-const loadQLBG = async () => {
+// Load QLPO
+const loadQLPO = async () => {
   try {
-    const response = await qlbgService.getAll()
-    qlbgData.value = response.data
+    const response = await qlpoService.getAll()
+    qlpoData.value = response.data
   } catch (error) {
-    console.error('Lỗi khi tải QLBG:', error)
+    console.error('Lỗi khi tải QLPO:', error)
   }
 }
 
-// Khi chọn Số BG, reset Mã BV
-const handleSoBGChange = (so_bg: string) => {
+const loadMaPOList = async () => {
+  try {
+    const response = await qlpoService.getAllMaPO()
+    maPOList.value = response.data
+  } catch (error) {
+    console.error('Lỗi khi tải danh sách Mã PO:', error)
+  }
+}
+
+// Khi chọn Mã PO, reset Mã BV
+const handleMaPOChange = () => {
   formData.value.ma_bv = ''
 }
 
@@ -289,17 +339,11 @@ const loadData = async () => {
     const response = await qlnbService.getAll()
     console.log('QLNB response:', response)
     
-    // Check if response has data property
-    if (response && response.data) {
-      data.value = response.data
-    } else if (Array.isArray(response)) {
-      data.value = response
-    } else {
-      data.value = []
-    }
+    data.value = Array.isArray(response) ? response : []
     
     console.log('QLNB data loaded:', data.value)
-  } catch (error: unknown) {
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } }; message?: string }
     console.error('Lỗi khi tải dữ liệu QLNB:', error)
     console.error('Error response:', error.response?.data)
     data.value = []
@@ -316,15 +360,27 @@ const saveItem = async () => {
   try {
     loading.value = true
     
+    const dataToSave: QLNB = {
+      ma_po: formData.value.ma_po,
+      ma_bv: formData.value.ma_bv,
+      phoi_lieu: formData.value.phoi_lieu,
+      gia_cong_ngoai: formData.value.gia_cong_ngoai,
+      gia_cong_noi_bo: formData.value.gia_cong_noi_bo,
+      xu_ly_be_mat: formData.value.xu_ly_be_mat,
+      van_chuyen: formData.value.van_chuyen,
+      phi_qldn: formData.value.phi_qldn,
+    }
+    
     if (editId.value !== null) {
-      await qlnbService.update(editId.value, formData.value)
+      await qlnbService.update(editId.value, dataToSave)
     } else {
-      await qlnbService.create(formData.value)
+      await qlnbService.create(dataToSave)
     }
     
     await loadData()
     closeModal()
-  } catch (error: unknown) {
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } }; message?: string }
     console.error('Lỗi khi lưu:', error)
     alert(`Không thể lưu dữ liệu! ${error.response?.data?.message || error.message}`)
   } finally {
@@ -332,10 +388,10 @@ const saveItem = async () => {
   }
 }
 
-const editItem = (item: QLNBItem) => {
+const editItem = (item: QLNB) => {
   editId.value = item.id || null
   formData.value = {
-    so_bg: item.so_bg,
+    ma_po: item.ma_po,
     ma_bv: item.ma_bv,
     phoi_lieu: item.phoi_lieu,
     gia_cong_ngoai: item.gia_cong_ngoai,
@@ -366,7 +422,7 @@ const closeModal = () => {
   showAddModal.value = false
   editId.value = null
   formData.value = {
-    so_bg: '',
+    ma_po: '',
     ma_bv: '',
     phoi_lieu: 0,
     gia_cong_ngoai: 0,
@@ -378,7 +434,8 @@ const closeModal = () => {
 }
 
 onMounted(() => {
-  loadQLBG()
+  loadQLPO()
+  loadMaPOList()
   loadData()
 })
 </script>
