@@ -8,7 +8,7 @@
           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           :disabled="loading"
         >
-          📊 Export Excel
+          📊 Export Excel {{ filterMaPO ? '(Đã lọc)' : '' }}
         </button>
         <button
           @click="openAddModal()"
@@ -17,6 +17,38 @@
           Thêm mới
         </button>
       </div>
+    </div>
+
+    <!-- Filter with Search -->
+    <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
+      <div class="flex gap-2">
+        <input
+          v-model="searchMaPO"
+          type="text"
+          placeholder="Tìm kiếm Mã PO..."
+          class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+        />
+        <select
+          v-model="filterMaPO"
+          class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+        >
+          <option value="">Tất cả</option>
+          <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
+            {{ item.ma_po }}
+          </option>
+        </select>
+        <button
+          v-if="filterMaPO"
+          @click="clearFilter"
+          class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+        >
+          Xóa lọc
+        </button>
+      </div>
+      <p v-if="filterMaPO" class="text-xs text-green-600 mt-2">
+        Đang hiển thị: {{ filteredData.length }} kết quả cho {{ filterMaPO }}
+      </p>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -172,7 +204,10 @@ import { qldmService } from '@/services/qldmService'
 import * as XLSX from 'xlsx'
 
 const data = ref<QLPO[]>([])
+const maPOList = ref<{ ma_po: string }[]>([])
 const maBVList = ref<{ ma_bv: string }[]>([])
+const filterMaPO = ref('')
+const searchMaPO = ref('')
 const showAddModal = ref(false)
 const selectedMaPO = ref('')
 const editId = ref<number | null>(null)
@@ -184,11 +219,25 @@ const formData = ref({
   ngay_giao: '',
 })
 
-// Gộp dữ liệu theo Mã PO
+// Filter Mã PO list by search
+const filteredMaPOList = computed(() => {
+  if (!searchMaPO.value) return maPOList.value
+  return maPOList.value.filter(item => 
+    item.ma_po.toLowerCase().includes(searchMaPO.value.toLowerCase())
+  )
+})
+
+// Filter data by selected Mã PO
+const filteredData = computed(() => {
+  if (!filterMaPO.value) return data.value
+  return data.value.filter(item => item.ma_po === filterMaPO.value)
+})
+
+// Gộp dữ liệu theo Mã PO (chỉ dữ liệu đã lọc)
 const groupedData = computed(() => {
   const groups: { [key: string]: QLPO[] } = {}
   
-  data.value.forEach(item => {
+  filteredData.value.forEach(item => {
     if (!groups[item.ma_po]) {
       groups[item.ma_po] = []
     }
@@ -205,6 +254,11 @@ const groupedData = computed(() => {
     }
   }).sort((a, b) => b.ma_po.localeCompare(a.ma_po))
 })
+
+const clearFilter = () => {
+  filterMaPO.value = ''
+  searchMaPO.value = ''
+}
 
 const maBVOptions = computed(() => {
   return maBVList.value.map(item => ({
@@ -265,7 +319,7 @@ const saveItem = async () => {
     console.log('Save successful')
     await loadData()
     closeModal()
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi khi lưu QLPO:', error)
     console.error('Error response:', error.response?.data)
     const errorMsg = error.response?.data?.message || error.message || 'Không thể lưu dữ liệu'
@@ -357,8 +411,18 @@ const exportToExcel = () => {
   }
 }
 
+const loadMaPOList = async () => {
+  try {
+    const response = await qlpoService.getAllMaPO()
+    maPOList.value = response.data
+  } catch (error) {
+    console.error('Lỗi khi tải danh sách Mã PO:', error)
+  }
+}
+
 onMounted(() => {
   loadData()
+  loadMaPOList()
   loadMaBVList()
 })
 </script>

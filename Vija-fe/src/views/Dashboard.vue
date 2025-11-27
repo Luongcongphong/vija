@@ -13,17 +13,53 @@
 
     <!-- Filter -->
     <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <label class="block text-sm font-medium mb-2">Lọc theo Số BG:</label>
-      <select
-        v-model="filterSoBG"
-        @change="loadData"
-        class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-      >
-        <option value="">Tất cả</option>
-        <option v-for="item in soBGList" :key="item.so_bg" :value="item.so_bg">
-          {{ item.so_bg }}
-        </option>
-      </select>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Số BG:</label>
+          <select
+            v-model="filterSoBG"
+            @change="loadData"
+            class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="">Tất cả</option>
+            <option v-for="item in soBGList" :key="item.so_bg" :value="item.so_bg">
+              {{ item.so_bg }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaPO"
+              type="text"
+              placeholder="Tìm kiếm Mã PO..."
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaPO"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
+                {{ item.ma_po }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <button
+          v-if="filterSoBG || filterMaPO"
+          @click="clearFilters"
+          class="px-3 py-1 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600"
+        >
+          Xóa tất cả lọc
+        </button>
+        <p v-if="filterSoBG || filterMaPO" class="text-xs text-blue-600 self-center">
+          Đang hiển thị: {{ filteredDashboardData.length }} kết quả
+        </p>
+      </div>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -58,7 +94,7 @@
             </tr>
             <tr
               v-else
-              v-for="item in dashboardData"
+              v-for="item in filteredDashboardData"
               :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
@@ -91,10 +127,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { dashboardService } from '@/services/dashboardService'
 import { qlbgService } from '@/services/qlbgService'
+import { qlpoService } from '@/services/qlpoService'
 import * as XLSX from 'xlsx'
 
 interface DashboardItem {
@@ -120,7 +157,10 @@ interface DashboardItem {
 
 const dashboardData = ref<DashboardItem[]>([])
 const soBGList = ref<{ so_bg: string }[]>([])
+const maPOList = ref<{ ma_po: string }[]>([])
 const filterSoBG = ref('')
+const filterMaPO = ref('')
+const searchMaPO = ref('')
 const loading = ref(false)
 
 const formatCurrency = (value: number) => {
@@ -130,12 +170,42 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
+// Filter Mã PO list by search
+const filteredMaPOList = computed(() => {
+  if (!searchMaPO.value) return maPOList.value
+  return maPOList.value.filter(item => 
+    item.ma_po.toLowerCase().includes(searchMaPO.value.toLowerCase())
+  )
+})
+
+// Filter dashboard data
+const filteredDashboardData = computed(() => {
+  let result = dashboardData.value
+  
+  if (filterMaPO.value) {
+    result = result.filter(item => 
+      item.ma_po && item.ma_po.includes(filterMaPO.value)
+    )
+  }
+  
+  return result
+})
+
 const loadSoBGList = async () => {
   try {
     const response = await qlbgService.getAllSoBG()
     soBGList.value = response.data
   } catch (error) {
     console.error('Lỗi khi tải danh sách Số BG:', error)
+  }
+}
+
+const loadMaPOList = async () => {
+  try {
+    const response = await qlpoService.getAllMaPO()
+    maPOList.value = response.data
+  } catch (error) {
+    console.error('Lỗi khi tải danh sách Mã PO:', error)
   }
 }
 
@@ -153,13 +223,22 @@ const loadData = async () => {
   }
 }
 
+const clearFilters = () => {
+  filterSoBG.value = ''
+  filterMaPO.value = ''
+  searchMaPO.value = ''
+  loadData()
+}
+
 const exportToExcel = () => {
-  if (dashboardData.value.length === 0) {
+  const dataToExport = filteredDashboardData.value
+  
+  if (dataToExport.length === 0) {
     alert('Không có dữ liệu để export!')
     return
   }
 
-  const excelData = dashboardData.value.map(item => ({
+  const excelData = dataToExport.map(item => ({
     'STT': item.stt,
     'Số BG': item.so_bg,
     'Mã PO': item.ma_po || '-',
@@ -188,6 +267,7 @@ const exportToExcel = () => {
 
 onMounted(() => {
   loadSoBGList()
+  loadMaPOList()
   loadData()
 })
 </script>
