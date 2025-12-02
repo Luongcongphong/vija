@@ -10,12 +10,28 @@
       </button>
     </div>
 
+    <!-- Filter/Search -->
+    <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <label class="block text-sm font-medium mb-2">Tìm kiếm theo Mã BV:</label>
+      <input
+        v-model="searchMaBV"
+        type="text"
+        placeholder="Nhập Mã BV để tìm kiếm..."
+        class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+      />
+      <p v-if="searchMaBV" class="text-xs text-blue-600 mt-2">
+        Đang hiển thị: {{ filteredData.length }} kết quả
+      </p>
+    </div>
+
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
               <th class="px-4 py-3">Mã BV</th>
+              <th class="px-4 py-3">Số BG</th>
+              <th class="px-4 py-3">Mã KH</th>
               <th class="px-4 py-3">Số lượng</th>
               <th class="px-4 py-3">Đơn giá</th>
               <th class="px-4 py-3">Thao tác</th>
@@ -23,18 +39,20 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="4" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
-            <tr v-else-if="data.length === 0">
-              <td colspan="4" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+            <tr v-else-if="filteredData.length === 0">
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">{{ searchMaBV ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
             </tr>
             <tr
               v-else
-              v-for="item in data"
+              v-for="item in filteredData"
               :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <td class="px-4 py-3 font-medium">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3">{{ item.so_bg || '-' }}</td>
+              <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
               <td class="px-4 py-3">{{ item.so_luong }}</td>
               <td class="px-4 py-3">{{ formatCurrency(item.don_gia) }}</td>
               <td class="px-4 py-3">
@@ -76,6 +94,24 @@
               type="text"
               required
               placeholder="VD: BV001"
+              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Số BG</label>
+            <input
+              v-model="formData.so_bg"
+              type="text"
+              placeholder="VD: BG001 (Tùy chọn)"
+              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Mã KH</label>
+            <input
+              v-model="formData.ma_kh"
+              type="text"
+              placeholder="VD: KH001 (Tùy chọn)"
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
@@ -124,18 +160,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { qldmService, type QLDM } from '@/services/qldmService'
 
 const data = ref<QLDM[]>([])
+const searchMaBV = ref('')
 const showAddModal = ref(false)
 const editId = ref<number | null>(null)
 const loading = ref(false)
 const formData = ref({
   ma_bv: '',
+  so_bg: '',
+  ma_kh: '',
   so_luong: 0,
   don_gia: 0,
+})
+
+// Filter data by search
+const filteredData = computed(() => {
+  if (!searchMaBV.value) return data.value
+  return data.value.filter(item => 
+    item.ma_bv.toLowerCase().includes(searchMaBV.value.toLowerCase())
+  )
 })
 
 const formatCurrency = (value: number) => {
@@ -182,6 +229,8 @@ const editItem = (item: QLDM) => {
   editId.value = item.id || null
   formData.value = {
     ma_bv: item.ma_bv,
+    so_bg: item.so_bg || '',
+    ma_kh: item.ma_kh || '',
     so_luong: item.so_luong,
     don_gia: item.don_gia,
   }
@@ -208,6 +257,8 @@ const closeModal = () => {
   editId.value = null
   formData.value = {
     ma_bv: '',
+    so_bg: '',
+    ma_kh: '',
     so_luong: 0,
     don_gia: 0,
   }

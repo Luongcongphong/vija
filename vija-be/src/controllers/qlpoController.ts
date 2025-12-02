@@ -55,7 +55,7 @@ export const getAllMaPO = async (req: AuthRequest, res: Response) => {
 // Tạo PO mới
 export const createQLPO = async (req: AuthRequest, res: Response) => {
   try {
-    const { ma_po, ma_bv, ngay_tao, ngay_giao } = req.body;
+    const { ma_po, ma_bv, so_luong, ngay_tao, ngay_giao } = req.body;
 
     // Validation
     if (!ma_po || !ma_bv) {
@@ -76,10 +76,11 @@ export const createQLPO = async (req: AuthRequest, res: Response) => {
 
     const formattedNgayTao = formatDate(ngay_tao);
     const formattedNgayGiao = formatDate(ngay_giao);
+    const soLuong = Number(so_luong) || 0;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlpo (ma_po, ma_bv, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?)',
-      [ma_po, ma_bv, formattedNgayTao, formattedNgayGiao]
+      'INSERT INTO qlpo (ma_po, ma_bv, so_luong, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?, ?)',
+      [ma_po, ma_bv, soLuong, formattedNgayTao, formattedNgayGiao]
     );
 
     res.status(201).json({
@@ -103,13 +104,26 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
     console.log('ID:', req.params.id);
     console.log('Body:', req.body);
     
-    const { ma_po, ma_bv, ngay_tao, ngay_giao } = req.body;
+    const { ma_po, ma_bv, so_luong, ngay_tao, ngay_giao } = req.body;
 
     // Validation
     if (!ma_po || !ma_bv) {
       console.log('Validation failed: Missing ma_po or ma_bv');
       return res.status(400).json({ message: 'Mã PO và Mã BV là bắt buộc' });
     }
+
+    // Lấy thông tin cũ trước khi update
+    const [oldData]: any = await pool.query(
+      'SELECT ma_po, ma_bv FROM qlpo WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (oldData.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy PO để cập nhật' });
+    }
+
+    const oldMaPO = oldData[0].ma_po;
+    const oldMaBV = oldData[0].ma_bv;
 
     // Convert date format from ISO to MySQL format (YYYY-MM-DD)
     const formatDate = (dateStr: string | null | undefined): string | null => {
@@ -125,13 +139,15 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
 
     const formattedNgayTao = formatDate(ngay_tao);
     const formattedNgayGiao = formatDate(ngay_giao);
+    const soLuong = Number(so_luong) || 0;
 
-    console.log('Formatted dates:', { ngay_tao: formattedNgayTao, ngay_giao: formattedNgayGiao });
+    console.log('Formatted dates:', { ngay_tao: formattedNgayTao, ngay_giao: formattedNgayGiao, so_luong: soLuong });
     console.log('Executing UPDATE query...');
     
+    // Update QLPO
     const [result]: any = await pool.query(
-      'UPDATE qlpo SET ma_po = ?, ma_bv = ?, ngay_tao = ?, ngay_giao = ? WHERE id = ?',
-      [ma_po, ma_bv, formattedNgayTao, formattedNgayGiao, req.params.id]
+      'UPDATE qlpo SET ma_po = ?, ma_bv = ?, so_luong = ?, ngay_tao = ?, ngay_giao = ? WHERE id = ?',
+      [ma_po, ma_bv, soLuong, formattedNgayTao, formattedNgayGiao, req.params.id]
     );
 
     console.log('Update result:', result);
@@ -141,8 +157,20 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Không tìm thấy PO để cập nhật' });
     }
 
+    // Tự động cập nhật QLNB nếu có thay đổi ma_po, ma_bv, hoặc so_luong
+    console.log('Updating related QLNB records...');
+    const [updateNB]: any = await pool.query(
+      'UPDATE qlnb SET ma_po = ?, ma_bv = ?, so_luong = ? WHERE ma_po = ? AND ma_bv = ?',
+      [ma_po, ma_bv, soLuong, oldMaPO, oldMaBV]
+    );
+    
+    console.log('QLNB updated:', updateNB.affectedRows, 'rows');
+
     console.log('Update successful');
-    res.json({ message: 'Cập nhật thành công' });
+    res.json({ 
+      message: 'Cập nhật thành công',
+      qlnbUpdated: updateNB.affectedRows
+    });
   } catch (error: any) {
     console.error('=== ERROR UPDATING QLPO ===');
     console.error('Error:', error);
@@ -166,5 +194,44 @@ export const deleteQLPO = async (req: AuthRequest, res: Response) => {
     res.json({ message: 'Xóa thành công' });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+// Xóa tất cả PO theo Mã PO
+export const deleteQLPOByMaPO = async (req: AuthRequest, res: Response) => {
+  try {
+    const { ma_po } = req.params;
+    
+    console.log('=== DELETE PO BY MA_PO ===');
+    console.log('Mã PO:', ma_po);
+    
+    // Đếm số lượng sẽ xóa
+    const [countResult]: any = await pool.query(
+      'SELECT COUNT(*) as count FROM qlpo WHERE ma_po = ?',
+      [ma_po]
+    );
+    
+    const count = countResult[0].count;
+    console.log('Số lượng sẽ xóa:', count);
+    
+    if (count === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy PO để xóa' });
+    }
+    
+    // Xóa tất cả
+    const [result]: any = await pool.query('DELETE FROM qlpo WHERE ma_po = ?', [ma_po]);
+    
+    console.log('Đã xóa:', result.affectedRows, 'dòng');
+    
+    res.json({ 
+      message: 'Xóa thành công', 
+      deletedCount: result.affectedRows 
+    });
+  } catch (error: any) {
+    console.error('Error deleting PO by ma_po:', error);
+    res.status(500).json({ 
+      message: 'Lỗi server', 
+      error: error.message 
+    });
   }
 };

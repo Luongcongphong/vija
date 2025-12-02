@@ -73,6 +73,7 @@
             <tr>
               <th class="px-4 py-3">Mã PO</th>
               <th class="px-4 py-3">Mã BV</th>
+              <th class="px-4 py-3">Số lượng</th>
               <th class="px-4 py-3">Ngày tạo</th>
               <th class="px-4 py-3">Ngày giao</th>
               <th class="px-4 py-3">Thao tác</th>
@@ -80,10 +81,10 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="5" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="groupedData.length === 0">
-              <td colspan="5" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
             </tr>
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
@@ -100,13 +101,20 @@
                 <td class="px-4 py-2">
                   {{ formatDate(group.ngay_giao) }}
                 </td>
-                <td class="px-4 py-2">
+                <td class="px-4 py-2 flex gap-2">
                   <button
                     @click="openAddModal(group.ma_po, group.ngay_tao, group.ngay_giao)"
                     class="text-green-600 hover:text-green-800 text-xs"
                     :disabled="loading"
                   >
                     + Thêm Mã BV
+                  </button>
+                  <button
+                    @click="deletePO(group.ma_po)"
+                    class="text-red-600 hover:text-red-800 text-xs font-medium"
+                    :disabled="loading"
+                  >
+                    🗑️ Xóa PO
                   </button>
                 </td>
               </tr>
@@ -117,6 +125,7 @@
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <td class="px-4 py-3">{{ item.ma_bv }}</td>
+                <td class="px-4 py-3">{{ item.so_luong || 0 }}</td>
                 <td class="px-4 py-3">{{ formatDate(item.ngay_tao) }}</td>
                 <td class="px-4 py-3">{{ formatDate(item.ngay_giao) }}</td>
                 <td class="px-4 py-3">
@@ -171,6 +180,16 @@
               label="Mã BV"
               placeholder="Chọn hoặc tìm Mã BV..."
               :required="true"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Số lượng</label>
+            <input
+              v-model.number="formData.so_luong"
+              type="number"
+              min="0"
+              placeholder="VD: 100"
+              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
           <div class="mb-4">
@@ -230,6 +249,7 @@ const loading = ref(false)
 const formData = ref({
   ma_po: '',
   ma_bv: '',
+  so_luong: 0,
   ngay_tao: '',
   ngay_giao: '',
 })
@@ -351,6 +371,7 @@ const editItem = (item: QLPO) => {
   formData.value = {
     ma_po: item.ma_po,
     ma_bv: item.ma_bv,
+    so_luong: item.so_luong || 0,
     ngay_tao: item.ngay_tao || '',
     ngay_giao: item.ngay_giao || '',
   }
@@ -358,14 +379,43 @@ const editItem = (item: QLPO) => {
 }
 
 const deleteItem = async (id: number) => {
-  if (confirm('Bạn có chắc muốn xóa PO này?')) {
+  if (confirm('Bạn có chắc muốn xóa dòng này?')) {
     try {
       loading.value = true
       await qlpoService.delete(id)
       await loadData()
+      await loadMaPOList()
     } catch (error) {
       console.error('Lỗi khi xóa:', error)
       alert('Không thể xóa dữ liệu!')
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
+const deletePO = async (ma_po: string) => {
+  const group = groupedData.value.find(g => g.ma_po === ma_po)
+  if (!group) return
+  
+  const confirmMsg = `Bạn có chắc muốn xóa toàn bộ PO "${ma_po}"?\n\n` +
+    `Sẽ xóa ${group.items.length} Mã BV:\n` +
+    group.items.map(item => `- ${item.ma_bv}`).join('\n')
+  
+  if (confirm(confirmMsg)) {
+    try {
+      loading.value = true
+      
+      // Xóa toàn bộ PO bằng 1 API call
+      const response = await qlpoService.deleteByMaPO(ma_po)
+      
+      await loadData()
+      await loadMaPOList()
+      
+      alert(`✅ Đã xóa thành công PO "${ma_po}" (${response.data.deletedCount} Mã BV)`)
+    } catch (error) {
+      console.error('Lỗi khi xóa PO:', error)
+      alert('Không thể xóa PO!')
     } finally {
       loading.value = false
     }
@@ -379,6 +429,7 @@ const closeModal = () => {
   formData.value = {
     ma_po: '',
     ma_bv: '',
+    so_luong: 0,
     ngay_tao: '',
     ngay_giao: '',
   }

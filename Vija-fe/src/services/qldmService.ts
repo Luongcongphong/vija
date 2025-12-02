@@ -3,6 +3,8 @@ import api from './api';
 export interface QLDM {
   id?: number;
   ma_bv: string;
+  so_bg?: string;
+  ma_kh?: string;
   so_luong: number;
   don_gia: number;
   created_at?: string;

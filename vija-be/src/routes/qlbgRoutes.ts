@@ -8,7 +8,8 @@ import {
   getDonGia,
   createQLBG,
   updateQLBG,
-  deleteQLBG
+  deleteQLBG,
+  deleteQLBGBySoBG
 } from '../controllers/qlbgController';
 
 const router = express.Router();
@@ -31,6 +32,7 @@ router.post('/', createQLBG);
 router.put('/:id', updateQLBG);
 
 // DELETE routes
+router.delete('/by-so-bg/:so_bg', deleteQLBGBySoBG);
 router.delete('/:id', deleteQLBG);
 
 export default router;

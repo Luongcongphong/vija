@@ -50,7 +50,7 @@
             <tr>
               <th class="px-4 py-3">Mã PO</th>
               <th class="px-4 py-3">Mã BV</th>
-              <th class="px-4 py-3">SL</th>
+              <th class="px-4 py-3">Số Lượng</th>
               <th class="px-4 py-3">Đơn giá</th>
               <th class="px-4 py-3">Thành Tiền</th>
               <th class="px-4 py-3">Phôi Liệu</th>
@@ -119,9 +119,7 @@ import * as XLSX from 'xlsx'
 
 interface DashboardItem {
   id: number
-  stt: number
-  so_bg: string
-  ma_po?: string
+  ma_po: string
   ma_bv: string
   so_luong: number
   don_gia: number
@@ -211,8 +209,6 @@ const groupedDashboardData = computed(() => {
     // Add summary row
     result.push({
       id: -Math.abs(maPO.charCodeAt(0) + Date.now()),
-      stt: 0,
-      so_bg: '',
       ma_po: `TỔNG ${maPO}`,
       ma_bv: '',
       so_luong: totalSoLuong,

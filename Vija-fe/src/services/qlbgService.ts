@@ -27,7 +27,7 @@ export const qlbgService = {
 
   // Lấy đơn giá từ QLDM
   getDonGia: (ma_bv: string, so_luong: number) => 
-    api.get<{ don_gia: number }>(`/qlbg/don-gia?ma_bv=${ma_bv}&so_luong=${so_luong}`),
+    api.get<{ don_gia: number; range?: string }>(`/qlbg/don-gia?ma_bv=${ma_bv}&so_luong=${so_luong}`),
 
   // Tạo báo giá mới
   create: (data: Partial<QLBG>) => api.post<{ message: string; data: QLBG }>('/qlbg', data),
@@ -36,6 +36,10 @@ export const qlbgService = {
   update: (id: number, data: Partial<QLBG>) => 
     api.put<{ message: string }>(`/qlbg/${id}`, data),
 
-  // Xóa báo giá
-  delete: (id: number) => api.delete<{ message: string }>(`/qlbg/${id}`)
+  // Xóa báo giá theo ID
+  delete: (id: number) => api.delete<{ message: string }>(`/qlbg/${id}`),
+
+  // Xóa tất cả báo giá theo Số BG
+  deleteBySoBG: (so_bg: string) => 
+    api.delete<{ message: string; deletedCount: number }>(`/qlbg/by-so-bg/${so_bg}`)
 };

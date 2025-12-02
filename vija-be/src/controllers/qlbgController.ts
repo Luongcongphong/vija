@@ -171,3 +171,43 @@ export const deleteQLBG = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Lỗi server', error });
   }
 };
+
+
+// Xóa tất cả BG theo Số BG
+export const deleteQLBGBySoBG = async (req: AuthRequest, res: Response) => {
+  try {
+    const { so_bg } = req.params;
+    
+    console.log('=== DELETE BG BY SO_BG ===');
+    console.log('Số BG:', so_bg);
+    
+    // Đếm số lượng sẽ xóa
+    const [countResult]: any = await pool.query(
+      'SELECT COUNT(*) as count FROM qlbg WHERE so_bg = ?',
+      [so_bg]
+    );
+    
+    const count = countResult[0].count;
+    console.log('Số lượng sẽ xóa:', count);
+    
+    if (count === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy BG để xóa' });
+    }
+    
+    // Xóa tất cả
+    const [result]: any = await pool.query('DELETE FROM qlbg WHERE so_bg = ?', [so_bg]);
+    
+    console.log('Đã xóa:', result.affectedRows, 'dòng');
+    
+    res.json({ 
+      message: 'Xóa thành công', 
+      deletedCount: result.affectedRows 
+    });
+  } catch (error: any) {
+    console.error('Error deleting BG by so_bg:', error);
+    res.status(500).json({ 
+      message: 'Lỗi server', 
+      error: error.message 
+    });
+  }
+};

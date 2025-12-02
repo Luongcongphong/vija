@@ -49,6 +49,7 @@
             <tr>
               <th class="px-4 py-3">Mã PO</th>
               <th class="px-4 py-3">Mã BV</th>
+              <th class="px-4 py-3">Số lượng</th>
               <th class="px-4 py-3">Phôi Liệu</th>
               <th class="px-4 py-3">Gia Công Ngoài</th>
               <th class="px-4 py-3">Gia Công Nội Bộ</th>
@@ -61,43 +62,63 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="10" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="11" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
-            <tr v-else-if="!data || data.length === 0">
-              <td colspan="10" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+            <tr v-else-if="groupedData.length === 0">
+              <td colspan="11" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
             </tr>
-            <tr
-              v-else
-              v-for="item in filteredData"
-              :key="item.id"
-              class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <td class="px-4 py-3">{{ item.ma_po }}</td>
-              <td class="px-4 py-3">{{ item.ma_bv }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.van_chuyen) }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.phi_qldn) }}</td>
-              <td class="px-4 py-3 font-medium">{{ formatCurrency(item.tong_phi || 0) }}</td>
-              <td class="px-4 py-3">
-                <button
-                  @click="editItem(item)"
-                  class="text-blue-600 hover:text-blue-800 mr-3"
-                  :disabled="loading"
-                >
-                  Sửa
-                </button>
-                <button
-                  @click="deleteItem(item.id!)"
-                  class="text-red-600 hover:text-red-800"
-                  :disabled="loading"
-                >
-                  Xóa
-                </button>
-              </td>
-            </tr>
+            <template v-else v-for="group in groupedData" :key="group.ma_po">
+              <!-- Header row cho mỗi Mã PO -->
+              <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
+                <td class="px-4 py-3 font-bold text-green-700 dark:text-green-300" :rowspan="group.items.length + 1">
+                  {{ group.ma_po }}
+                </td>
+                <td class="px-4 py-2 font-medium" colspan="9">
+                  Số lượng Mã BV: {{ group.items.length }}
+                </td>
+                <td class="px-4 py-2">
+                  <button
+                    @click="deletePO(group.ma_po)"
+                    class="text-red-600 hover:text-red-800 text-xs font-medium"
+                    :disabled="loading"
+                  >
+                    🗑️ Xóa PO
+                  </button>
+                </td>
+              </tr>
+              <!-- Chi tiết từng Mã BV -->
+              <tr
+                v-for="item in group.items"
+                :key="item.id"
+                class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <td class="px-4 py-3">{{ item.ma_bv }}</td>
+                <td class="px-4 py-3">{{ item.so_luong || 0 }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(item.van_chuyen) }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(item.phi_qldn) }}</td>
+                <td class="px-4 py-3 font-medium">{{ formatCurrency(item.tong_phi || 0) }}</td>
+                <td class="px-4 py-3">
+                  <button
+                    @click="editItem(item)"
+                    class="text-blue-600 hover:text-blue-800 mr-3"
+                    :disabled="loading"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    @click="deleteItem(item.id!)"
+                    class="text-red-600 hover:text-red-800"
+                    :disabled="loading"
+                  >
+                    Xóa
+                  </button>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -113,24 +134,49 @@
           {{ editId !== null ? 'Sửa chi phí nội bộ' : 'Thêm chi phí nội bộ' }}
         </h2>
         <form @submit.prevent="saveItem">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="mb-4">
-              <SearchableSelect
-                v-model="formData.ma_po"
-                :options="maPOOptions"
-                label="Mã PO"
-                placeholder="Chọn hoặc tìm Mã PO..."
-                :required="true"
-                @update:modelValue="handleMaPOChange"
+          <div class="mb-4">
+            <SearchableSelect
+              v-model="formData.ma_po"
+              :options="maPOOptions"
+              label="Mã PO"
+              placeholder="Chọn hoặc tìm Mã PO..."
+              :required="true"
+              @update:modelValue="handleMaPOChange"
+            />
+          </div>
+          
+          <!-- Nút tạo tự động -->
+          <div v-if="formData.ma_po && !editId" class="mb-4">
+            <button
+              type="button"
+              @click="autoCreateFromPO"
+              class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+            >
+              🔄 Tạo tự động {{ maBVOptions.length }} Mã BV từ PO này
+            </button>
+            <p class="text-xs text-gray-500 mt-2">
+              Tự động tạo các dòng chi phí cho tất cả Mã BV trong PO (chi phí mặc định = 0)
+            </p>
+          </div>
+
+          <!-- Form nhập thủ công (chỉ hiển thị khi sửa) -->
+          <div v-if="editId" class="grid grid-cols-2 gap-4">
+            <div class="mb-4 col-span-2">
+              <label class="block text-sm font-medium mb-2">Mã BV</label>
+              <input
+                v-model="formData.ma_bv"
+                type="text"
+                readonly
+                class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600"
               />
             </div>
             <div class="mb-4">
-              <SearchableSelect
-                v-model="formData.ma_bv"
-                :options="maBVOptions"
-                label="Mã BV"
-                placeholder="Chọn hoặc tìm Mã BV..."
-                :required="true"
+              <label class="block text-sm font-medium mb-2">Số lượng</label>
+              <input
+                v-model.number="formData.so_luong"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
               />
             </div>
             <div class="mb-4">
@@ -260,6 +306,23 @@ const filteredData = computed(() => {
   return data.value.filter(item => item.ma_po === filterMaPO.value)
 })
 
+// Gộp dữ liệu theo Mã PO
+const groupedData = computed(() => {
+  const groups: { [key: string]: QLNB[] } = {}
+  
+  filteredData.value.forEach(item => {
+    if (!groups[item.ma_po]) {
+      groups[item.ma_po] = []
+    }
+    groups[item.ma_po].push(item)
+  })
+  
+  return Object.keys(groups).map(ma_po => ({
+    ma_po,
+    items: groups[ma_po]
+  })).sort((a, b) => b.ma_po.localeCompare(a.ma_po))
+})
+
 const clearFilter = () => {
   filterMaPO.value = ''
   searchMaPO.value = ''
@@ -323,6 +386,68 @@ const loadMaPOList = async () => {
 // Khi chọn Mã PO, reset Mã BV
 const handleMaPOChange = () => {
   formData.value.ma_bv = ''
+}
+
+// Tạo tự động các dòng từ PO
+const autoCreateFromPO = async () => {
+  if (!formData.value.ma_po) {
+    alert('Vui lòng chọn Mã PO trước!')
+    return
+  }
+  
+  const confirmMsg = `Tạo tự động ${maBVOptions.value.length} dòng chi phí cho PO "${formData.value.ma_po}"?\n\n` +
+    `Các Mã BV: ${maBVOptions.value.map(opt => opt.value).join(', ')}\n\n` +
+    `Tất cả chi phí sẽ được đặt = 0, bạn có thể sửa sau.`
+  
+  if (!confirm(confirmMsg)) return
+  
+  try {
+    loading.value = true
+    
+    let successCount = 0
+    let failCount = 0
+    const failedItems: string[] = []
+    
+    // Lấy thông tin từ QLPO
+    const poItems = qlpoData.value.filter(item => item.ma_po === formData.value.ma_po)
+    
+    for (const poItem of poItems) {
+      try {
+        await qlnbService.create({
+          ma_po: formData.value.ma_po,
+          ma_bv: poItem.ma_bv,
+          so_luong: poItem.so_luong || 0,
+          phoi_lieu: 0,
+          gia_cong_ngoai: 0,
+          gia_cong_noi_bo: 0,
+          xu_ly_be_mat: 0,
+          van_chuyen: 0,
+          phi_qldn: 0
+        })
+        successCount++
+      } catch (error) {
+        failCount++
+        failedItems.push(poItem.ma_bv)
+      }
+    }
+    
+    await loadData()
+    closeModal()
+    
+    let resultMsg = `Tạo tự động hoàn tất!\n\n`
+    resultMsg += `✅ Thành công: ${successCount} dòng\n`
+    if (failCount > 0) {
+      resultMsg += `❌ Thất bại: ${failCount} dòng\n`
+      resultMsg += `Mã BV lỗi: ${failedItems.join(', ')}`
+    }
+    
+    alert(resultMsg)
+  } catch (error) {
+    console.error('Lỗi khi tạo tự động:', error)
+    alert('Không thể tạo tự động!')
+  } finally {
+    loading.value = false
+  }
 }
 
 const formatCurrency = (value: number) => {
@@ -412,6 +537,40 @@ const deleteItem = async (id: number) => {
     } catch (error) {
       console.error('Lỗi khi xóa:', error)
       alert('Không thể xóa dữ liệu!')
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
+const deletePO = async (ma_po: string) => {
+  const group = groupedData.value.find(g => g.ma_po === ma_po)
+  if (!group) return
+  
+  const confirmMsg = `Bạn có chắc muốn xóa toàn bộ chi phí của PO "${ma_po}"?\n\n` +
+    `Sẽ xóa ${group.items.length} Mã BV:\n` +
+    group.items.map(item => `- ${item.ma_bv}`).join('\n')
+  
+  if (confirm(confirmMsg)) {
+    try {
+      loading.value = true
+      
+      // Xóa từng dòng
+      let successCount = 0
+      for (const item of group.items) {
+        try {
+          await qlnbService.delete(item.id!)
+          successCount++
+        } catch (error) {
+          console.error('Lỗi khi xóa item:', item.id, error)
+        }
+      }
+      
+      await loadData()
+      alert(`✅ Đã xóa thành công ${successCount}/${group.items.length} dòng của PO "${ma_po}"`)
+    } catch (error) {
+      console.error('Lỗi khi xóa PO:', error)
+      alert('Không thể xóa PO!')
     } finally {
       loading.value = false
     }

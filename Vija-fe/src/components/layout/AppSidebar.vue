@@ -252,11 +252,11 @@ const menuGroups = [
         name: "QLDM",
         path: "/qldm",
       },
-      {
-        icon: DocsIcon,
-        name: "QLBG",
-        path: "/qlbg",
-      },
+      // {
+      //   icon: DocsIcon,
+      //   name: "QLBG",
+      //   path: "/qlbg",
+      // },
       {
         icon: BoxCubeIcon,
         name: "QLPO",

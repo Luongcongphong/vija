@@ -4,6 +4,7 @@ export interface QLNB {
   id?: number;
   ma_po: string;
   ma_bv: string;
+  so_luong?: number;
   phoi_lieu: number;
   gia_cong_ngoai: number;
   gia_cong_noi_bo: number;

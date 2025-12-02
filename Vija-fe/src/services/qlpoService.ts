@@ -4,6 +4,7 @@ export interface QLPO {
   id?: number;
   ma_po: string;
   ma_bv: string;
+  so_luong?: number;
   ngay_tao?: string;
   ngay_giao?: string;
   created_at?: string;
@@ -30,6 +31,10 @@ export const qlpoService = {
   update: (id: number, data: Partial<QLPO>) => 
     api.put<{ message: string }>(`/qlpo/${id}`, data),
 
-  // Xóa PO
-  delete: (id: number) => api.delete<{ message: string }>(`/qlpo/${id}`)
+  // Xóa PO theo ID
+  delete: (id: number) => api.delete<{ message: string }>(`/qlpo/${id}`),
+
+  // Xóa tất cả PO theo Mã PO
+  deleteByMaPO: (ma_po: string) => 
+    api.delete<{ message: string; deletedCount: number }>(`/qlpo/by-ma-po/${ma_po}`)
 };
