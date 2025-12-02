@@ -26,7 +26,7 @@
     <!-- Dropdown list -->
     <div
       v-if="showDropdown && filteredOptions.length > 0"
-      class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+      :class="['absolute z-50 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg overflow-y-auto', maxHeight]"
     >
       <div
         v-for="option in filteredOptions"
@@ -62,9 +62,12 @@ interface Props {
   label?: string
   placeholder?: string
   required?: boolean
+  maxHeight?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  maxHeight: 'max-h-60'
+})
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()

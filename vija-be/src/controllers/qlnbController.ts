@@ -56,15 +56,22 @@ export const createQLNB = async (req: AuthRequest, res: Response) => {
 
 export const updateQLNB = async (req: AuthRequest, res: Response) => {
   try {
-    const { ma_po, ma_bv, so_luong, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
+    const { ma_po, ma_bv, phoi_lieu, gia_cong_ngoai, gia_cong_noi_bo, xu_ly_be_mat, van_chuyen, phi_qldn } = req.body;
     
     // Validation
     if (!ma_po || !ma_bv) {
       return res.status(400).json({ message: 'Mã PO và Mã BV là bắt buộc' });
     }
     
+    // Lấy số lượng từ QLPO (không cho phép update từ QLNB)
+    const [poData]: any = await pool.query(
+      'SELECT so_luong FROM qlpo WHERE ma_po = ? AND ma_bv = ? LIMIT 1',
+      [ma_po, ma_bv]
+    );
+    
+    const soLuongNum = poData.length > 0 ? Number(poData[0].so_luong) || 0 : 0;
+    
     // Convert to numbers to avoid string concatenation
-    const soLuongNum = Number(so_luong) || 0;
     const phoiLieuNum = Number(phoi_lieu) || 0;
     const giaCongNgoaiNum = Number(gia_cong_ngoai) || 0;
     const giaCongNoiBoNum = Number(gia_cong_noi_bo) || 0;

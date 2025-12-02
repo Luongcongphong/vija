@@ -151,13 +151,18 @@
     <!-- Modal thêm/sửa -->
     <div
       v-if="showAddModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-99999"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-99999 p-4"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl">
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          {{ editId !== null ? 'Sửa chi phí nội bộ' : 'Thêm chi phí nội bộ' }}
-        </h2>
-        <form @submit.prevent="saveItem">
+      <form @submit.prevent="saveItem" class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-5xl flex flex-col max-h-[96vh]">
+        <!-- Header cố định -->
+        <div class="p-6 border-b dark:border-gray-700">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+            {{ editId !== null ? 'Sửa chi phí nội bộ' : 'Thêm chi phí nội bộ' }}
+          </h2>
+        </div>
+        
+        <!-- Nội dung có scroll -->
+        <div class="flex-1 overflow-y-auto p-6">
           <div class="mb-4">
             <SearchableSelect
               v-model="formData.ma_po"
@@ -165,25 +170,35 @@
               label="Mã PO"
               placeholder="Chọn hoặc tìm Mã PO..."
               :required="true"
+              max-height="max-h-80"
               @update:modelValue="handleMaPOChange"
             />
           </div>
           
           <!-- Nút tạo tự động -->
           <div v-if="formData.ma_po && !editId" class="mb-4">
-            <button
-              type="button"
-              @click="autoCreateFromPO"
-              class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-            >
-              🔄 Tạo tự động {{ maBVOptions.length }} Mã BV từ PO này
-            </button>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click="autoCreateFromPO"
+                class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              >
+                🔄 Tạo tự động {{ maBVOptions.length }} Mã BV từ PO này
+              </button>
+              <button
+                type="button"
+                @click="closeModal"
+                class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
+              >
+                Hủy
+              </button>
+            </div>
             <p class="text-xs text-gray-500 mt-2">
               Tự động tạo các dòng chi phí cho tất cả Mã BV trong PO (chi phí mặc định = 0)
             </p>
           </div>
 
-          <!-- Form nhập thủ công (chỉ hiển thị khi sửa) -->
+          <!-- Form nhập thủ công (hiển thị khi sửa) -->
           <div v-if="editId" class="grid grid-cols-2 gap-4">
             <div class="mb-4 col-span-2">
               <label class="block text-sm font-medium mb-2">Mã BV</label>
@@ -195,12 +210,12 @@
               />
             </div>
             <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">Số lượng</label>
+              <label class="block text-sm font-medium mb-2">Số lượng (tự động)</label>
               <input
                 v-model.number="formData.so_luong"
                 type="number"
-                min="0"
-                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                readonly
+                class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600"
               />
             </div>
             <div class="mb-4">
@@ -264,28 +279,36 @@
               />
             </div>
           </div>
-          <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
-            <p class="text-sm font-medium">
-              Tổng phí: <span class="text-blue-600 dark:text-blue-300">{{ formatCurrency(tongPhi) }}</span>
-            </p>
+        </div>
+        
+        <!-- Footer cố định -->
+        <div class="p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <div class="flex items-center justify-between">
+            <div v-if="editId" class="p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
+              <p class="text-sm font-medium">
+                Tổng phí: <span class="text-blue-600 dark:text-blue-300">{{ formatCurrency(tongPhi) }}</span>
+              </p>
+            </div>
+            <div v-else class="flex-1"></div>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click="closeModal"
+                class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Hủy
+              </button>
+              <button
+                v-if="editId"
+                type="submit"
+                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Lưu
+              </button>
+            </div>
           </div>
-          <div class="flex justify-end gap-2 mt-4">
-            <button
-              type="button"
-              @click="closeModal"
-              class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Lưu
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </AdminLayout>
 </template>
@@ -299,7 +322,7 @@ import { qlpoService } from '@/services/qlpoService'
 import * as XLSX from 'xlsx'
 
 const data = ref<QLNB[]>([])
-const qlpoData = ref<Array<{ ma_po: string; ma_bv: string }>>([])
+const qlpoData = ref<Array<{ ma_po: string; ma_bv: string; so_luong?: number }>>([])
 const maPOList = ref<{ ma_po: string }[]>([])
 const filterMaPO = ref('')
 const searchMaPO = ref('')
@@ -309,6 +332,7 @@ const loading = ref(false)
 const formData = ref({
   ma_po: '',
   ma_bv: '',
+  so_luong: 0,
   phoi_lieu: 0,
   gia_cong_ngoai: 0,
   gia_cong_noi_bo: 0,
@@ -543,6 +567,7 @@ const editItem = (item: QLNB) => {
   formData.value = {
     ma_po: item.ma_po,
     ma_bv: item.ma_bv,
+    so_luong: item.so_luong || 0,
     phoi_lieu: item.phoi_lieu,
     gia_cong_ngoai: item.gia_cong_ngoai,
     gia_cong_noi_bo: item.gia_cong_noi_bo,
@@ -608,6 +633,7 @@ const closeModal = () => {
   formData.value = {
     ma_po: '',
     ma_bv: '',
+    so_luong: 0,
     phoi_lieu: 0,
     gia_cong_ngoai: 0,
     gia_cong_noi_bo: 0,
@@ -838,7 +864,7 @@ const handleFileImport = async (event: Event) => {
         
         for (let i = 0; i < validData.length; i++) {
           try {
-            await qlnbService.create(validData[i])
+            await qlnbService.create(validData[i] as QLNB)
             successCount++
           } catch (err: unknown) {
             failCount++
