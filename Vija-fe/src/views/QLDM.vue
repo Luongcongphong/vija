@@ -2,25 +2,69 @@
   <AdminLayout>
     <div class="mb-6 flex justify-between items-center">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Quản lý Định mức (Bản Vẽ)</h1>
-      <button
-        @click="showAddModal = true"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Thêm mới
-      </button>
+      <div class="flex gap-2">
+        <button
+          @click="downloadTemplate"
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          📥 Tải file mẫu
+        </button>
+        <label class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 cursor-pointer">
+          📤 Import Excel
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            @change="handleFileImport"
+            class="hidden"
+          />
+        </label>
+        <button
+          @click="exportToExcel"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          :disabled="loading"
+        >
+          📊 Export Excel
+        </button>
+        <button
+          @click="showAddModal = true"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Thêm mới
+        </button>
+      </div>
     </div>
 
-    <!-- Filter/Search -->
+
+
+    <!-- Filter with Search -->
     <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <label class="block text-sm font-medium mb-2">Tìm kiếm theo Mã BV:</label>
-      <input
-        v-model="searchMaBV"
-        type="text"
-        placeholder="Nhập Mã BV để tìm kiếm..."
-        class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-      />
-      <p v-if="searchMaBV" class="text-xs text-blue-600 mt-2">
-        Đang hiển thị: {{ filteredData.length }} kết quả
+      <label class="block text-sm font-medium mb-2">Lọc theo Mã BV:</label>
+      <div class="flex gap-2">
+        <input
+          v-model="searchMaBV"
+          type="text"
+          placeholder="Tìm kiếm Mã BV..."
+          class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+        />
+        <select
+          v-model="filterMaBV"
+          class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+        >
+          <option value="">Tất cả</option>
+          <option v-for="item in filteredMaBVList" :key="item.ma_bv" :value="item.ma_bv">
+            {{ item.ma_bv }}
+          </option>
+        </select>
+        <button
+          v-if="filterMaBV"
+          @click="clearFilter"
+          class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+        >
+          Xóa lọc
+        </button>
+      </div>
+      <p v-if="filterMaBV" class="text-xs text-green-600 mt-2">
+        Đang hiển thị: {{ filteredData.length }} kết quả cho {{ filterMaBV }}
       </p>
     </div>
 
@@ -163,9 +207,12 @@
 import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { qldmService, type QLDM } from '@/services/qldmService'
+import * as XLSX from 'xlsx'
 
 const data = ref<QLDM[]>([])
+const maBVList = ref<{ ma_bv: string }[]>([])
 const searchMaBV = ref('')
+const filterMaBV = ref('')
 const showAddModal = ref(false)
 const editId = ref<number | null>(null)
 const loading = ref(false)
@@ -177,13 +224,26 @@ const formData = ref({
   don_gia: 0,
 })
 
-// Filter data by search
-const filteredData = computed(() => {
-  if (!searchMaBV.value) return data.value
-  return data.value.filter(item => 
+
+
+// Filter Mã BV list by search
+const filteredMaBVList = computed(() => {
+  if (!searchMaBV.value) return maBVList.value
+  return maBVList.value.filter(item => 
     item.ma_bv.toLowerCase().includes(searchMaBV.value.toLowerCase())
   )
 })
+
+// Filter data by selected Mã BV
+const filteredData = computed(() => {
+  if (!filterMaBV.value) return data.value
+  return data.value.filter(item => item.ma_bv === filterMaBV.value)
+})
+
+const clearFilter = () => {
+  filterMaBV.value = ''
+  searchMaBV.value = ''
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -202,6 +262,15 @@ const loadData = async () => {
     alert('Không thể tải dữ liệu!')
   } finally {
     loading.value = false
+  }
+}
+
+const loadMaBVList = async () => {
+  try {
+    const response = await qldmService.getAllMaBV()
+    maBVList.value = response.data
+  } catch (error) {
+    console.error('Lỗi khi tải danh sách Mã BV:', error)
   }
 }
 
@@ -264,7 +333,220 @@ const closeModal = () => {
   }
 }
 
+const downloadTemplate = () => {
+  try {
+    const templateData = [
+      {
+        'Mã BV': 'BV001',
+        'Số BG': 'BG001',
+        'Mã KH': 'KH001',
+        'Số lượng': 50,
+        'Đơn giá': 23000
+      },
+      {
+        'Mã BV': 'BV001',
+        'Số BG': 'BG001',
+        'Mã KH': 'KH001',
+        'Số lượng': 100,
+        'Đơn giá': 12000
+      },
+      {
+        'Mã BV': 'BV002',
+        'Số BG': 'BG002',
+        'Mã KH': 'KH002',
+        'Số lượng': 200,
+        'Đơn giá': 8000
+      }
+    ]
+    
+    const instructions = [
+      ['HƯỚNG DẪN SỬ DỤNG FILE MẪU IMPORT ĐỊNH MỨC'],
+      [''],
+      ['1. Mã BV: Mã bao vải (bắt buộc)'],
+      ['2. Số BG: Số báo giá (tùy chọn)'],
+      ['3. Mã KH: Mã khách hàng (tùy chọn)'],
+      ['4. Số lượng: Ngưỡng số lượng áp dụng (bắt buộc)'],
+      ['5. Đơn giá: Đơn giá cho ngưỡng này (bắt buộc)'],
+      [''],
+      ['LOGIC NGƯỠNG GIÁ:'],
+      ['- Cùng 1 Mã BV có thể có nhiều ngưỡng giá'],
+      ['- VD: BV001 có SL=50 giá 23,000đ và SL=100 giá 12,000đ'],
+      ['- Khi PO có SL=30 → lấy giá 23,000đ (ngưỡng 50)'],
+      ['- Khi PO có SL=80 → lấy giá 12,000đ (ngưỡng 100)'],
+      [''],
+      ['LƯU Ý:'],
+      ['- Xóa các dòng hướng dẫn này trước khi import'],
+      [''],
+      ['DỮ LIỆU MẪU:']
+    ]
+    
+    const wb = XLSX.utils.book_new()
+    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
+    const wsData = XLSX.utils.json_to_sheet(templateData)
+    
+    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn')
+    XLSX.utils.book_append_sheet(wb, wsData, 'Dữ liệu mẫu')
+    
+    XLSX.writeFile(wb, 'QLDM_Template.xlsx')
+    alert('Đã tải file mẫu thành công!')
+  } catch (error) {
+    console.error('Lỗi khi tải file mẫu:', error)
+    alert('Không thể tải file mẫu!')
+  }
+}
+
+const exportToExcel = () => {
+  try {
+    const excelData = data.value.map(item => ({
+      'Mã BV': item.ma_bv,
+      'Số BG': item.so_bg || '',
+      'Mã KH': item.ma_kh || '',
+      'Số lượng': item.so_luong,
+      'Đơn giá': item.don_gia
+    }))
+    
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Định mức')
+    
+    const fileName = `QLDM_${new Date().toISOString().slice(0, 10)}.xlsx`
+    XLSX.writeFile(wb, fileName)
+    
+    alert('Xuất Excel thành công!')
+  } catch (error) {
+    console.error('Lỗi khi xuất Excel:', error)
+    alert('Không thể xuất Excel!')
+  }
+}
+
+const handleFileImport = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) return
+  
+  try {
+    loading.value = true
+    
+    const reader = new FileReader()
+    
+    reader.onload = async (e) => {
+      try {
+        const data = e.target?.result
+        const workbook = XLSX.read(data, { type: 'binary' })
+        
+        const sheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[sheetName]
+        
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Array<{
+          'Mã BV': string
+          'Số BG'?: string
+          'Mã KH'?: string
+          'Số lượng': number
+          'Đơn giá': number
+        }>
+        
+        if (jsonData.length === 0) {
+          alert('File Excel không có dữ liệu!')
+          loading.value = false
+          return
+        }
+        
+        const validData: Array<Partial<QLDM>> = []
+        const errors: string[] = []
+        
+        jsonData.forEach((row, index) => {
+          const rowNum = index + 2
+          
+          if (!row['Mã BV']) {
+            errors.push(`Dòng ${rowNum}: Thiếu Mã BV`)
+            return
+          }
+          if (!row['Số lượng']) {
+            errors.push(`Dòng ${rowNum}: Thiếu Số lượng`)
+            return
+          }
+          if (!row['Đơn giá']) {
+            errors.push(`Dòng ${rowNum}: Thiếu Đơn giá`)
+            return
+          }
+          
+          validData.push({
+            ma_bv: String(row['Mã BV']).trim(),
+            so_bg: row['Số BG'] ? String(row['Số BG']).trim() : '',
+            ma_kh: row['Mã KH'] ? String(row['Mã KH']).trim() : '',
+            so_luong: Number(row['Số lượng']),
+            don_gia: Number(row['Đơn giá'])
+          })
+        })
+        
+        if (errors.length > 0) {
+          alert('Có lỗi trong file Excel:\n' + errors.join('\n'))
+          loading.value = false
+          return
+        }
+        
+        if (validData.length === 0) {
+          alert('Không có dữ liệu hợp lệ để import!')
+          loading.value = false
+          return
+        }
+        
+        const confirmMsg = `Bạn có chắc muốn import ${validData.length} dòng dữ liệu?`
+        
+        if (!confirm(confirmMsg)) {
+          loading.value = false
+          return
+        }
+        
+        let successCount = 0
+        let failCount = 0
+        const failedRows: string[] = []
+        
+        for (let i = 0; i < validData.length; i++) {
+          try {
+            await qldmService.create(validData[i])
+            successCount++
+          } catch (err: unknown) {
+            failCount++
+            const error = err as { response?: { data?: { message?: string } } }
+            const errorMsg = error?.response?.data?.message || 'Lỗi không xác định'
+            failedRows.push(`Dòng ${i + 2}: ${validData[i].ma_bv} (${errorMsg})`)
+          }
+        }
+        
+        await loadData()
+        
+        let resultMsg = `Import hoàn tất!\n\n`
+        resultMsg += `✅ Thành công: ${successCount} dòng\n`
+        if (failCount > 0) {
+          resultMsg += `❌ Thất bại: ${failCount} dòng\n\n`
+          resultMsg += 'Chi tiết lỗi:\n' + failedRows.join('\n')
+        }
+        
+        alert(resultMsg)
+        
+      } catch (error) {
+        console.error('Lỗi khi xử lý file:', error)
+        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra định dạng file!')
+      } finally {
+        loading.value = false
+      }
+    }
+    
+    reader.readAsBinaryString(file)
+    
+  } catch (error) {
+    console.error('Lỗi khi import:', error)
+    alert('Không thể import file!')
+    loading.value = false
+  } finally {
+    target.value = ''
+  }
+}
+
 onMounted(() => {
   loadData()
+  loadMaBVList()
 })
 </script>

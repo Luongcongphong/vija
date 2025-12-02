@@ -2,12 +2,36 @@
   <AdminLayout>
     <div class="mb-6 flex justify-between items-center">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Quản lý Nội bộ</h1>
-      <button
-        @click="showAddModal = true"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Thêm mới
-      </button>
+      <div class="flex gap-2">
+        <button
+          @click="downloadTemplate"
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          📥 Tải file mẫu
+        </button>
+        <label class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 cursor-pointer">
+          📤 Import Excel
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            @change="handleFileImport"
+            class="hidden"
+          />
+        </label>
+        <button
+          @click="exportToExcel"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          :disabled="loading"
+        >
+          📊 Export Excel {{ filterMaPO ? '(Đã lọc)' : '' }}
+        </button>
+        <button
+          @click="showAddModal = true"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Thêm mới
+        </button>
+      </div>
     </div>
 
     <!-- Filter with Search -->
@@ -272,6 +296,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
 import { qlnbService, type QLNB } from '@/services/qlnbService'
 import { qlpoService } from '@/services/qlpoService'
+import * as XLSX from 'xlsx'
 
 const data = ref<QLNB[]>([])
 const qlpoData = ref<Array<{ ma_po: string; ma_bv: string }>>([])
@@ -589,6 +614,267 @@ const closeModal = () => {
     xu_ly_be_mat: 0,
     van_chuyen: 0,
     phi_qldn: 0,
+  }
+}
+
+const downloadTemplate = () => {
+  try {
+    const templateData = [
+      {
+        'Mã PO': 'PO001',
+        'Mã BV': 'BV001',
+        'Số lượng': 100,
+        'Phôi Liệu': 50000,
+        'Gia Công Ngoài': 30000,
+        'Gia Công Nội Bộ': 20000,
+        'Xử lý Bề Mặt': 15000,
+        'Vận Chuyển': 10000,
+        'Phí QLDN': 5000
+      },
+      {
+        'Mã PO': 'PO001',
+        'Mã BV': 'BV002',
+        'Số lượng': 200,
+        'Phôi Liệu': 80000,
+        'Gia Công Ngoài': 40000,
+        'Gia Công Nội Bộ': 25000,
+        'Xử lý Bề Mặt': 18000,
+        'Vận Chuyển': 12000,
+        'Phí QLDN': 6000
+      }
+    ]
+    
+    const instructions = [
+      ['HƯỚNG DẪN SỬ DỤNG FILE MẪU IMPORT CHI PHÍ NỘI BỘ'],
+      [''],
+      ['1. Mã PO: Mã Purchase Order (bắt buộc, phải tồn tại trong QLPO)'],
+      ['2. Mã BV: Mã bao vải (bắt buộc, phải tồn tại trong QLPO)'],
+      ['3. Số lượng: Số lượng (tùy chọn, mặc định lấy từ QLPO)'],
+      ['4. Phôi Liệu: Chi phí phôi liệu (bắt buộc)'],
+      ['5. Gia Công Ngoài: Chi phí gia công ngoài (bắt buộc)'],
+      ['6. Gia Công Nội Bộ: Chi phí gia công nội bộ (bắt buộc)'],
+      ['7. Xử lý Bề Mặt: Chi phí xử lý bề mặt (bắt buộc)'],
+      ['8. Vận Chuyển: Chi phí vận chuyển (bắt buộc)'],
+      ['9. Phí QLDN: Phí quản lý dự án (bắt buộc)'],
+      [''],
+      ['LƯU Ý:'],
+      ['- Tổng phí sẽ được tự động tính = tổng các chi phí'],
+      ['- Mã PO và Mã BV phải tồn tại trong QLPO trước khi import'],
+      ['- Xóa các dòng hướng dẫn này trước khi import'],
+      [''],
+      ['DỮ LIỆU MẪU:']
+    ]
+    
+    const wb = XLSX.utils.book_new()
+    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
+    const wsData = XLSX.utils.json_to_sheet(templateData)
+    
+    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn')
+    XLSX.utils.book_append_sheet(wb, wsData, 'Dữ liệu mẫu')
+    
+    XLSX.writeFile(wb, 'QLNB_Template.xlsx')
+    alert('Đã tải file mẫu thành công!')
+  } catch (error) {
+    console.error('Lỗi khi tải file mẫu:', error)
+    alert('Không thể tải file mẫu!')
+  }
+}
+
+const exportToExcel = () => {
+  try {
+    const dataToExport = filterMaPO.value ? filteredData.value : data.value
+    
+    if (dataToExport.length === 0) {
+      alert('Không có dữ liệu để export!')
+      return
+    }
+
+    const excelData: unknown[] = []
+    
+    groupedData.value.forEach(group => {
+      excelData.push({
+        'Mã PO': group.ma_po,
+        'Mã BV': `Số lượng: ${group.items.length}`,
+        'Số lượng': '',
+        'Phôi Liệu': '',
+        'Gia Công Ngoài': '',
+        'Gia Công Nội Bộ': '',
+        'Xử lý Bề Mặt': '',
+        'Vận Chuyển': '',
+        'Phí QLDN': '',
+        'Tổng Phí': ''
+      })
+      
+      group.items.forEach(item => {
+        excelData.push({
+          'Mã PO': '',
+          'Mã BV': item.ma_bv,
+          'Số lượng': item.so_luong || 0,
+          'Phôi Liệu': item.phoi_lieu,
+          'Gia Công Ngoài': item.gia_cong_ngoai,
+          'Gia Công Nội Bộ': item.gia_cong_noi_bo,
+          'Xử lý Bề Mặt': item.xu_ly_be_mat,
+          'Vận Chuyển': item.van_chuyen,
+          'Phí QLDN': item.phi_qldn,
+          'Tổng Phí': item.tong_phi || 0
+        })
+      })
+      
+      excelData.push({
+        'Mã PO': '',
+        'Mã BV': '',
+        'Số lượng': '',
+        'Phôi Liệu': '',
+        'Gia Công Ngoài': '',
+        'Gia Công Nội Bộ': '',
+        'Xử lý Bề Mặt': '',
+        'Vận Chuyển': '',
+        'Phí QLDN': '',
+        'Tổng Phí': ''
+      })
+    })
+    
+    const ws = XLSX.utils.json_to_sheet(excelData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Chi phí nội bộ')
+    
+    const fileName = `QLNB_${new Date().toISOString().slice(0, 10)}.xlsx`
+    XLSX.writeFile(wb, fileName)
+    
+    alert('Xuất Excel thành công!')
+  } catch (error) {
+    console.error('Lỗi khi xuất Excel:', error)
+    alert('Không thể xuất Excel!')
+  }
+}
+
+const handleFileImport = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) return
+  
+  try {
+    loading.value = true
+    
+    const reader = new FileReader()
+    
+    reader.onload = async (e) => {
+      try {
+        const data = e.target?.result
+        const workbook = XLSX.read(data, { type: 'binary' })
+        
+        const sheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[sheetName]
+        
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Array<{
+          'Mã PO': string
+          'Mã BV': string
+          'Số lượng'?: number
+          'Phôi Liệu': number
+          'Gia Công Ngoài': number
+          'Gia Công Nội Bộ': number
+          'Xử lý Bề Mặt': number
+          'Vận Chuyển': number
+          'Phí QLDN': number
+        }>
+        
+        if (jsonData.length === 0) {
+          alert('File Excel không có dữ liệu!')
+          loading.value = false
+          return
+        }
+        
+        const validData: Array<Partial<QLNB>> = []
+        const errors: string[] = []
+        
+        jsonData.forEach((row, index) => {
+          const rowNum = index + 2
+          
+          if (!row['Mã PO']) {
+            errors.push(`Dòng ${rowNum}: Thiếu Mã PO`)
+            return
+          }
+          if (!row['Mã BV']) {
+            errors.push(`Dòng ${rowNum}: Thiếu Mã BV`)
+            return
+          }
+          
+          validData.push({
+            ma_po: String(row['Mã PO']).trim(),
+            ma_bv: String(row['Mã BV']).trim(),
+            so_luong: row['Số lượng'] ? Number(row['Số lượng']) : 0,
+            phoi_lieu: Number(row['Phôi Liệu']) || 0,
+            gia_cong_ngoai: Number(row['Gia Công Ngoài']) || 0,
+            gia_cong_noi_bo: Number(row['Gia Công Nội Bộ']) || 0,
+            xu_ly_be_mat: Number(row['Xử lý Bề Mặt']) || 0,
+            van_chuyen: Number(row['Vận Chuyển']) || 0,
+            phi_qldn: Number(row['Phí QLDN']) || 0
+          })
+        })
+        
+        if (errors.length > 0) {
+          alert('Có lỗi trong file Excel:\n' + errors.join('\n'))
+          loading.value = false
+          return
+        }
+        
+        if (validData.length === 0) {
+          alert('Không có dữ liệu hợp lệ để import!')
+          loading.value = false
+          return
+        }
+        
+        const confirmMsg = `Bạn có chắc muốn import ${validData.length} dòng dữ liệu?`
+        
+        if (!confirm(confirmMsg)) {
+          loading.value = false
+          return
+        }
+        
+        let successCount = 0
+        let failCount = 0
+        const failedRows: string[] = []
+        
+        for (let i = 0; i < validData.length; i++) {
+          try {
+            await qlnbService.create(validData[i])
+            successCount++
+          } catch (err: unknown) {
+            failCount++
+            const error = err as { response?: { data?: { message?: string } } }
+            const errorMsg = error?.response?.data?.message || 'Lỗi không xác định'
+            failedRows.push(`Dòng ${i + 2}: ${validData[i].ma_po} - ${validData[i].ma_bv} (${errorMsg})`)
+          }
+        }
+        
+        await loadData()
+        
+        let resultMsg = `Import hoàn tất!\n\n`
+        resultMsg += `✅ Thành công: ${successCount} dòng\n`
+        if (failCount > 0) {
+          resultMsg += `❌ Thất bại: ${failCount} dòng\n\n`
+          resultMsg += 'Chi tiết lỗi:\n' + failedRows.join('\n')
+        }
+        
+        alert(resultMsg)
+        
+      } catch (error) {
+        console.error('Lỗi khi xử lý file:', error)
+        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra định dạng file!')
+      } finally {
+        loading.value = false
+      }
+    }
+    
+    reader.readAsBinaryString(file)
+    
+  } catch (error) {
+    console.error('Lỗi khi import:', error)
+    alert('Không thể import file!')
+    loading.value = false
+  } finally {
+    target.value = ''
   }
 }
 
