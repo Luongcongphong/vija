@@ -101,7 +101,7 @@
                   {{ group.ma_po }}
                 </td>
                 <td class="px-4 py-2 font-medium" colspan="11">
-                  Số lượng Mã BV: {{ group.items.length }}
+                  SLBV: {{ group.items.length }}
                 </td>
                 <td class="px-4 py-2">
                   <button
@@ -685,35 +685,9 @@ const downloadTemplate = () => {
       }
     ]
     
-    const instructions = [
-      ['HƯỚNG DẪN SỬ DỤNG FILE MẪU IMPORT CHI PHÍ NỘI BỘ'],
-      [''],
-      ['1. Mã PO: Mã Purchase Order (bắt buộc, phải tồn tại trong QLPO)'],
-      ['2. Mã BV: Mã bao vải (bắt buộc, phải tồn tại trong QLPO)'],
-      ['3. Mã KH: Mã khách hàng (tùy chọn, tự động lấy từ QLDM)'],
-      ['4. Số lượng: Số lượng (tùy chọn, mặc định lấy từ QLPO)'],
-      ['5. ĐVT: Đơn vị tính (tùy chọn, mặc định lấy từ QLDM)'],
-      ['6. Phôi Liệu: Chi phí phôi liệu (bắt buộc)'],
-      ['7. Gia Công Ngoài: Chi phí gia công ngoài (bắt buộc)'],
-      ['8. Gia Công Nội Bộ: Chi phí gia công nội bộ (bắt buộc)'],
-      ['9. Xử lý Bề Mặt: Chi phí xử lý bề mặt (bắt buộc)'],
-      ['10. Vận Chuyển: Chi phí vận chuyển (bắt buộc)'],
-      ['11. Phí QLDN: Phí quản lý dự án (bắt buộc)'],
-      [''],
-      ['LƯU Ý:'],
-      ['- Tổng phí sẽ được tự động tính = tổng các chi phí'],
-      ['- Mã PO và Mã BV phải tồn tại trong QLPO trước khi import'],
-      ['- Mã KH và ĐVT tự động lấy từ QLDM nếu không nhập'],
-      ['- Xóa các dòng hướng dẫn này trước khi import'],
-      [''],
-      ['DỮ LIỆU MẪU:']
-    ]
-    
     const wb = XLSX.utils.book_new()
-    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
     const wsData = XLSX.utils.json_to_sheet(templateData)
     
-    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn')
     XLSX.utils.book_append_sheet(wb, wsData, 'Dữ liệu mẫu')
     
     XLSX.writeFile(wb, 'QLNB_Template.xlsx')
