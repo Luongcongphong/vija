@@ -46,26 +46,26 @@
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
+        <table class="w-full text-sm text-left border-collapse">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-4 py-3">Mã PO</th>
-              <th class="px-4 py-3">Mã BV</th>
-              <th class="px-4 py-3">Mã KH</th>
-              <th class="px-4 py-3">Số Lượng</th>
-              <th class="px-4 py-3">ĐVT</th>
-              <th class="px-4 py-3">Đơn giá</th>
-              <th class="px-4 py-3">ĐV Tiền Tệ</th>
-              <th class="px-4 py-3">Thành Tiền</th>
-              <th class="px-4 py-3">Phôi Liệu</th>
-              <th class="px-4 py-3">GC Ngoài</th>
-              <th class="px-4 py-3">GC Nội Bộ</th>
-              <th class="px-4 py-3">XL Bề Mặt</th>
-              <th class="px-4 py-3">Vận Chuyển</th>
-              <th class="px-4 py-3">Phí QLDN</th>
-              <th class="px-4 py-3">Tổng Phí</th>
-              <th class="px-4 py-3">Lợi Nhuận</th>
-              <th class="px-4 py-3">Tỷ lệ %</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã PO</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã BV</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã KH</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Số Lượng</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">ĐVT</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Đơn giá</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">ĐV Tiền Tệ</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Thành Tiền</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Phôi Liệu</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">GC Ngoài</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">GC Nội Bộ</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">XL Bề Mặt</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Vận Chuyển</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Phí QLDN</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Tổng Phí</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Lợi Nhuận</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Tỷ lệ %</th>
             </tr>
           </thead>
           <tbody>
@@ -86,27 +86,27 @@
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700'
               ]"
             >
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold text-blue-700 dark:text-blue-300' : 'font-medium text-blue-600'">
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold text-blue-700 dark:text-blue-300' : 'font-medium text-blue-600'">
                 {{ item.ma_po || '-' }}
               </td>
-              <td class="px-4 py-3">{{ item.ma_bv }}</td>
-              <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ item.so_luong }}</td>
-              <td class="px-4 py-3">{{ item.isTotal ? '' : (item.dvt || 'p') }}</td>
-              <td class="px-4 py-3">{{ item.isTotal ? '' : formatCurrency(item.don_gia) }}</td>
-              <td class="px-4 py-3">{{ item.isTotal ? '' : (item.don_vi_tien_te || 'VND') }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : 'font-medium'">{{ formatCurrency(item.thanh_tien) }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phoi_lieu) }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.van_chuyen) }}</td>
-              <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phi_qldn) }}</td>
-              <td class="px-4 py-3 font-bold">{{ formatCurrency(item.tong_phi) }}</td>
-              <td class="px-4 py-3 font-bold" :class="item.loi_nhuan >= 0 ? 'text-green-600' : 'text-red-600'">
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ item.so_luong }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.isTotal ? '' : (item.dvt || 'p') }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.isTotal ? '' : formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.isTotal ? '' : (item.don_vi_tien_te || 'VND') }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : 'font-medium'">{{ formatCurrency(item.thanh_tien) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phoi_lieu) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.van_chuyen) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phi_qldn) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600 font-bold">{{ formatCurrency(item.tong_phi) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600 font-bold" :class="item.loi_nhuan >= 0 ? 'text-green-600' : 'text-red-600'">
                 {{ formatCurrency(item.loi_nhuan) }}
               </td>
-              <td class="px-4 py-3 font-bold" :class="item.ty_le >= 0 ? 'text-green-600' : 'text-red-600'">
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600 font-bold" :class="item.ty_le >= 0 ? 'text-green-600' : 'text-red-600'">
                 {{ item.ty_le }}%
               </td>
             </tr>

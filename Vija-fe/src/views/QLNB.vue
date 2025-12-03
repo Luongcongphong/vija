@@ -69,22 +69,22 @@
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
+        <table class="w-full text-sm text-left border-collapse">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-4 py-3">Mã PO</th>
-              <th class="px-4 py-3">Mã BV</th>
-              <th class="px-4 py-3">Mã KH</th>
-              <th class="px-4 py-3">Số lượng</th>
-              <th class="px-4 py-3">ĐVT</th>
-              <th class="px-4 py-3">Phôi Liệu</th>
-              <th class="px-4 py-3">Gia Công Ngoài</th>
-              <th class="px-4 py-3">Gia Công Nội Bộ</th>
-              <th class="px-4 py-3">Xử lý Bề Mặt</th>
-              <th class="px-4 py-3">Vận Chuyển</th>
-              <th class="px-4 py-3">Phí QLDN</th>
-              <th class="px-4 py-3">Tổng Phí</th>
-              <th class="px-4 py-3">Thao tác</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã PO</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã BV</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã KH</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Số lượng</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">ĐVT</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Phôi Liệu</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Gia Công Ngoài</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Gia Công Nội Bộ</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Xử lý Bề Mặt</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Vận Chuyển</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Phí QLDN</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Tổng Phí</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -97,13 +97,13 @@
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
               <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
-                <td class="px-4 py-3 font-bold text-green-700 dark:text-green-300" :rowspan="group.items.length + 1">
+                <td class="px-4 py-3 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
-                <td class="px-4 py-2 font-medium" colspan="11">
+                <td class="px-4 py-2 font-medium border border-gray-300 dark:border-gray-600" colspan="11">
                   SLBV: {{ group.items.length }}
                 </td>
-                <td class="px-4 py-2">
+                <td class="px-4 py-2 border border-gray-300 dark:border-gray-600">
                   <button
                     @click="deletePO(group.ma_po)"
                     class="text-red-600 hover:text-red-800 text-xs font-medium"
@@ -119,18 +119,18 @@
                 :key="item.id"
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td class="px-4 py-3">{{ item.ma_bv }}</td>
-                <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
-                <td class="px-4 py-3">{{ item.so_luong || 0 }}</td>
-                <td class="px-4 py-3">{{ item.dvt || 'p' }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(item.van_chuyen) }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(item.phi_qldn) }}</td>
-                <td class="px-4 py-3 font-medium">{{ formatCurrency(item.tong_phi || 0) }}</td>
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.so_luong || 0 }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.phoi_lieu) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.van_chuyen) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.phi_qldn) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600 font-medium">{{ formatCurrency(item.tong_phi || 0) }}</td>
+                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">
                   <button
                     @click="editItem(item)"
                     class="text-blue-600 hover:text-blue-800 mr-3"

@@ -69,17 +69,17 @@
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
+        <table class="w-full text-sm text-left border-collapse">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-3 py-2">Mã PO</th>
-              <th class="px-3 py-2">Mã BV</th>
-              <th class="px-3 py-2">Mã KH</th>
-              <th class="px-3 py-2">Số lượng</th>
-              <th class="px-3 py-2">ĐVT</th>
-              <th class="px-3 py-2">Ngày tạo</th>
-              <th class="px-3 py-2">Ngày giao</th>
-              <th class="px-3 py-2">Thao tác</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã PO</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã BV</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã KH</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Số lượng</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">ĐVT</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày tạo</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày giao</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -92,19 +92,19 @@
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
               <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
-                <td class="px-3 py-2 font-bold text-green-700 dark:text-green-300" :rowspan="group.items.length + 1">
+                <td class="px-3 py-2 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
-                <td class="px-3 py-2 font-medium" colspan="2">
+                <td class="px-3 py-2 font-medium border border-gray-300 dark:border-gray-600" colspan="2">
                   SLBV: {{ group.items.length }}
                 </td>
-                <td class="px-3 py-2">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   {{ formatDate(group.ngay_tao) }}
                 </td>
-                <td class="px-3 py-2">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   {{ formatDate(group.ngay_giao) }}
                 </td>
-                <td class="px-3 py-2 flex gap-2">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 flex gap-2">
                   <button
                     @click="openAddModal(group.ma_po, group.ngay_tao, group.ngay_giao)"
                     class="text-green-600 hover:text-green-800 text-xs"
@@ -127,13 +127,13 @@
                 :key="item.id"
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td class="px-3 py-2">{{ item.ma_bv }}</td>
-                <td class="px-3 py-2">{{ item.ma_kh || '-' }}</td>
-                <td class="px-3 py-2">{{ item.so_luong || 0 }}</td>
-                <td class="px-3 py-2">{{ item.dvt || 'p' }}</td>
-                <td class="px-3 py-2">{{ formatDate(item.ngay_tao) }}</td>
-                <td class="px-3 py-2">{{ formatDate(item.ngay_giao) }}</td>
-                <td class="px-3 py-2">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.so_luong || 0 }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_tao) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_giao) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   <button
                     @click="editItem(item)"
                     class="text-blue-600 hover:text-blue-800 mr-3"
