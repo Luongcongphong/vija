@@ -26,10 +26,11 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
     console.log('JOIN check sample:', joinCheck);
     
     // Query chính - Lấy đơn giá theo ngưỡng số lượng
-    // Logic: Tìm mức giá có so_luong lớn nhất mà <= số lượng PO
-    // VD: QLDM có 50->23000, 100->12000
-    //     PO có 30 -> lấy giá 23000 (ngưỡng 50)
-    //     PO có 80 -> lấy giá 12000 (ngưỡng 100)
+    // Logic: Tìm mức giá có so_luong nhỏ nhất mà >= số lượng PO
+    // VD: QLDM có 50->23000, 100->10000
+    //     PO có 30 -> lấy giá 23000 (ngưỡng 50, vì 30 <= 50)
+    //     PO có 51 -> lấy giá 10000 (ngưỡng 100, vì 51 <= 100)
+    //     PO có 150 -> lấy giá 10000 (ngưỡng 100, vì không có ngưỡng nào >= 150)
     const query = `
       SELECT 
         po.id as id,
@@ -40,13 +41,13 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
           (SELECT don_gia 
            FROM qldm 
            WHERE ma_bv = po.ma_bv 
-             AND so_luong <= po.so_luong
-           ORDER BY so_luong DESC 
+             AND so_luong >= po.so_luong
+           ORDER BY so_luong ASC 
            LIMIT 1),
           (SELECT don_gia 
            FROM qldm 
            WHERE ma_bv = po.ma_bv
-           ORDER BY so_luong ASC 
+           ORDER BY so_luong DESC 
            LIMIT 1),
           0
         ) as don_gia,
@@ -54,13 +55,13 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
           (SELECT don_gia 
            FROM qldm 
            WHERE ma_bv = po.ma_bv 
-             AND so_luong <= po.so_luong
-           ORDER BY so_luong DESC 
+             AND so_luong >= po.so_luong
+           ORDER BY so_luong ASC 
            LIMIT 1),
           (SELECT don_gia 
            FROM qldm 
            WHERE ma_bv = po.ma_bv
-           ORDER BY so_luong ASC 
+           ORDER BY so_luong DESC 
            LIMIT 1),
           0
         )) as thanh_tien,
@@ -75,13 +76,13 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
           (SELECT don_gia 
            FROM qldm 
            WHERE ma_bv = po.ma_bv 
-             AND so_luong <= po.so_luong
-           ORDER BY so_luong DESC 
+             AND so_luong >= po.so_luong
+           ORDER BY so_luong ASC 
            LIMIT 1),
           (SELECT don_gia 
            FROM qldm 
            WHERE ma_bv = po.ma_bv
-           ORDER BY so_luong ASC 
+           ORDER BY so_luong DESC 
            LIMIT 1),
           0
         )) - COALESCE(nb.tong_phi, 0)) as loi_nhuan,
@@ -90,13 +91,13 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
             (SELECT don_gia 
              FROM qldm 
              WHERE ma_bv = po.ma_bv 
-               AND so_luong <= po.so_luong
-             ORDER BY so_luong DESC 
+               AND so_luong >= po.so_luong
+             ORDER BY so_luong ASC 
              LIMIT 1),
             (SELECT don_gia 
              FROM qldm 
              WHERE ma_bv = po.ma_bv
-             ORDER BY so_luong ASC 
+             ORDER BY so_luong DESC 
              LIMIT 1),
             0
           )) > 0 THEN 
@@ -104,26 +105,26 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
               (SELECT don_gia 
                FROM qldm 
                WHERE ma_bv = po.ma_bv 
-                 AND so_luong <= po.so_luong
-               ORDER BY so_luong DESC 
+                 AND so_luong >= po.so_luong
+               ORDER BY so_luong ASC 
                LIMIT 1),
               (SELECT don_gia 
                FROM qldm 
                WHERE ma_bv = po.ma_bv
-               ORDER BY so_luong ASC 
+               ORDER BY so_luong DESC 
                LIMIT 1),
               0
             )) - COALESCE(nb.tong_phi, 0)) / (po.so_luong * COALESCE(
               (SELECT don_gia 
                FROM qldm 
                WHERE ma_bv = po.ma_bv 
-                 AND so_luong <= po.so_luong
-               ORDER BY so_luong DESC 
+                 AND so_luong >= po.so_luong
+               ORDER BY so_luong ASC 
                LIMIT 1),
               (SELECT don_gia 
                FROM qldm 
                WHERE ma_bv = po.ma_bv
-               ORDER BY so_luong ASC 
+               ORDER BY so_luong DESC 
                LIMIT 1),
               0
             )) * 100), 2)
