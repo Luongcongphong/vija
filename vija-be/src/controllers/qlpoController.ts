@@ -5,7 +5,13 @@ import { AuthRequest } from '../middleware/auth';
 // Lấy tất cả PO
 export const getAllQLPO = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM qlpo ORDER BY created_at DESC');
+    const [rows] = await pool.query(`
+      SELECT 
+        po.*,
+        (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt
+      FROM qlpo po
+      ORDER BY po.created_at DESC
+    `);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error });
@@ -15,7 +21,13 @@ export const getAllQLPO = async (req: AuthRequest, res: Response) => {
 // Lấy PO theo ID
 export const getQLPOById = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows]: any = await pool.query('SELECT * FROM qlpo WHERE id = ?', [req.params.id]);
+    const [rows]: any = await pool.query(`
+      SELECT 
+        po.*,
+        (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt
+      FROM qlpo po
+      WHERE po.id = ?
+    `, [req.params.id]);
     
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy' });
@@ -55,11 +67,22 @@ export const getAllMaPO = async (req: AuthRequest, res: Response) => {
 // Tạo PO mới
 export const createQLPO = async (req: AuthRequest, res: Response) => {
   try {
-    const { ma_po, ma_bv, so_luong, ngay_tao, ngay_giao } = req.body;
+    let { ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao } = req.body;
 
     // Validation
     if (!ma_po || !ma_bv) {
       return res.status(400).json({ message: 'Mã PO và Mã BV là bắt buộc' });
+    }
+
+    // Nếu không có ma_kh, tự động lấy từ QLDM
+    if (!ma_kh) {
+      const [qldmRows]: any = await pool.query(
+        'SELECT ma_kh FROM qldm WHERE ma_bv = ? LIMIT 1',
+        [ma_bv]
+      );
+      if (qldmRows.length > 0) {
+        ma_kh = qldmRows[0].ma_kh;
+      }
     }
 
     // Convert date format from ISO to MySQL format (YYYY-MM-DD)
@@ -79,8 +102,8 @@ export const createQLPO = async (req: AuthRequest, res: Response) => {
     const soLuong = Number(so_luong) || 0;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlpo (ma_po, ma_bv, so_luong, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?, ?)',
-      [ma_po, ma_bv, soLuong, formattedNgayTao, formattedNgayGiao]
+      'INSERT INTO qlpo (ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?, ?, ?)',
+      [ma_po, ma_bv, ma_kh || null, soLuong, formattedNgayTao, formattedNgayGiao]
     );
 
     res.status(201).json({
@@ -104,7 +127,7 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
     console.log('ID:', req.params.id);
     console.log('Body:', req.body);
     
-    const { ma_po, ma_bv, so_luong, ngay_tao, ngay_giao } = req.body;
+    let { ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao } = req.body;
 
     // Validation
     if (!ma_po || !ma_bv) {
@@ -124,6 +147,17 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
 
     const oldMaPO = oldData[0].ma_po;
     const oldMaBV = oldData[0].ma_bv;
+
+    // Nếu không có ma_kh, tự động lấy từ QLDM
+    if (!ma_kh) {
+      const [qldmRows]: any = await pool.query(
+        'SELECT ma_kh FROM qldm WHERE ma_bv = ? LIMIT 1',
+        [ma_bv]
+      );
+      if (qldmRows.length > 0) {
+        ma_kh = qldmRows[0].ma_kh;
+      }
+    }
 
     // Convert date format from ISO to MySQL format (YYYY-MM-DD)
     const formatDate = (dateStr: string | null | undefined): string | null => {
@@ -146,8 +180,8 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
     
     // Update QLPO
     const [result]: any = await pool.query(
-      'UPDATE qlpo SET ma_po = ?, ma_bv = ?, so_luong = ?, ngay_tao = ?, ngay_giao = ? WHERE id = ?',
-      [ma_po, ma_bv, soLuong, formattedNgayTao, formattedNgayGiao, req.params.id]
+      'UPDATE qlpo SET ma_po = ?, ma_bv = ?, ma_kh = ?, so_luong = ?, ngay_tao = ?, ngay_giao = ? WHERE id = ?',
+      [ma_po, ma_bv, ma_kh || null, soLuong, formattedNgayTao, formattedNgayGiao, req.params.id]
     );
 
     console.log('Update result:', result);
@@ -190,7 +224,24 @@ export const updateQLPO = async (req: AuthRequest, res: Response) => {
 // Xóa PO
 export const deleteQLPO = async (req: AuthRequest, res: Response) => {
   try {
+    // Lấy thông tin PO trước khi xóa
+    const [poData]: any = await pool.query(
+      'SELECT ma_po, ma_bv FROM qlpo WHERE id = ?',
+      [req.params.id]
+    );
+    
+    if (poData.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy PO để xóa' });
+    }
+    
+    const { ma_po, ma_bv } = poData[0];
+    
+    // Xóa PO
     await pool.query('DELETE FROM qlpo WHERE id = ?', [req.params.id]);
+    
+    // Xóa QLNB tương ứng
+    await pool.query('DELETE FROM qlnb WHERE ma_po = ? AND ma_bv = ?', [ma_po, ma_bv]);
+    
     res.json({ message: 'Xóa thành công' });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error });
@@ -212,20 +263,24 @@ export const deleteQLPOByMaPO = async (req: AuthRequest, res: Response) => {
     );
     
     const count = countResult[0].count;
-    console.log('Số lượng sẽ xóa:', count);
+    console.log('Số lượng QLPO sẽ xóa:', count);
     
     if (count === 0) {
       return res.status(404).json({ message: 'Không tìm thấy PO để xóa' });
     }
     
-    // Xóa tất cả
-    const [result]: any = await pool.query('DELETE FROM qlpo WHERE ma_po = ?', [ma_po]);
+    // Xóa tất cả QLNB liên quan trước
+    const [nbResult]: any = await pool.query('DELETE FROM qlnb WHERE ma_po = ?', [ma_po]);
+    console.log('Đã xóa QLNB:', nbResult.affectedRows, 'dòng');
     
-    console.log('Đã xóa:', result.affectedRows, 'dòng');
+    // Xóa tất cả QLPO
+    const [result]: any = await pool.query('DELETE FROM qlpo WHERE ma_po = ?', [ma_po]);
+    console.log('Đã xóa QLPO:', result.affectedRows, 'dòng');
     
     res.json({ 
       message: 'Xóa thành công', 
-      deletedCount: result.affectedRows 
+      deletedCount: result.affectedRows,
+      deletedQLNB: nbResult.affectedRows
     });
   } catch (error: any) {
     console.error('Error deleting PO by ma_po:', error);

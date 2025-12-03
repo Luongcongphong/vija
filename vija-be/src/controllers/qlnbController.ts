@@ -4,7 +4,14 @@ import { AuthRequest } from '../middleware/auth';
 
 export const getAllQLNB = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM qlnb ORDER BY created_at DESC');
+    const [rows] = await pool.query(`
+      SELECT 
+        nb.*,
+        (SELECT ma_kh FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as ma_kh,
+        (SELECT dvt FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as dvt
+      FROM qlnb nb
+      ORDER BY nb.created_at DESC
+    `);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server', error });
@@ -13,7 +20,14 @@ export const getAllQLNB = async (req: AuthRequest, res: Response) => {
 
 export const getQLNBById = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows]: any = await pool.query('SELECT * FROM qlnb WHERE id = ?', [req.params.id]);
+    const [rows]: any = await pool.query(`
+      SELECT 
+        nb.*,
+        (SELECT ma_kh FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as ma_kh,
+        (SELECT dvt FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as dvt
+      FROM qlnb nb
+      WHERE nb.id = ?
+    `, [req.params.id]);
     
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Không tìm thấy' });

@@ -74,7 +74,9 @@
             <tr>
               <th class="px-4 py-3">Mã PO</th>
               <th class="px-4 py-3">Mã BV</th>
+              <th class="px-4 py-3">Mã KH</th>
               <th class="px-4 py-3">Số lượng</th>
+              <th class="px-4 py-3">ĐVT</th>
               <th class="px-4 py-3">Phôi Liệu</th>
               <th class="px-4 py-3">Gia Công Ngoài</th>
               <th class="px-4 py-3">Gia Công Nội Bộ</th>
@@ -87,10 +89,10 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="11" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="13" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="groupedData.length === 0">
-              <td colspan="11" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+              <td colspan="13" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
             </tr>
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
@@ -98,7 +100,7 @@
                 <td class="px-4 py-3 font-bold text-green-700 dark:text-green-300" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
-                <td class="px-4 py-2 font-medium" colspan="9">
+                <td class="px-4 py-2 font-medium" colspan="11">
                   Số lượng Mã BV: {{ group.items.length }}
                 </td>
                 <td class="px-4 py-2">
@@ -118,7 +120,9 @@
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <td class="px-4 py-3">{{ item.ma_bv }}</td>
+                <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
                 <td class="px-4 py-3">{{ item.so_luong || 0 }}</td>
+                <td class="px-4 py-3">{{ item.dvt || 'p' }}</td>
                 <td class="px-4 py-3">{{ formatCurrency(item.phoi_lieu) }}</td>
                 <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
                 <td class="px-4 py-3">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
@@ -656,7 +660,9 @@ const downloadTemplate = () => {
       {
         'Mã PO': 'PO001',
         'Mã BV': 'BV001',
+        'Mã KH': 'KH001',
         'Số lượng': 100,
+        'ĐVT': 'p',
         'Phôi Liệu': 50000,
         'Gia Công Ngoài': 30000,
         'Gia Công Nội Bộ': 20000,
@@ -667,7 +673,9 @@ const downloadTemplate = () => {
       {
         'Mã PO': 'PO001',
         'Mã BV': 'BV002',
+        'Mã KH': 'KH002',
         'Số lượng': 200,
+        'ĐVT': 'p',
         'Phôi Liệu': 80000,
         'Gia Công Ngoài': 40000,
         'Gia Công Nội Bộ': 25000,
@@ -682,17 +690,20 @@ const downloadTemplate = () => {
       [''],
       ['1. Mã PO: Mã Purchase Order (bắt buộc, phải tồn tại trong QLPO)'],
       ['2. Mã BV: Mã bao vải (bắt buộc, phải tồn tại trong QLPO)'],
-      ['3. Số lượng: Số lượng (tùy chọn, mặc định lấy từ QLPO)'],
-      ['4. Phôi Liệu: Chi phí phôi liệu (bắt buộc)'],
-      ['5. Gia Công Ngoài: Chi phí gia công ngoài (bắt buộc)'],
-      ['6. Gia Công Nội Bộ: Chi phí gia công nội bộ (bắt buộc)'],
-      ['7. Xử lý Bề Mặt: Chi phí xử lý bề mặt (bắt buộc)'],
-      ['8. Vận Chuyển: Chi phí vận chuyển (bắt buộc)'],
-      ['9. Phí QLDN: Phí quản lý dự án (bắt buộc)'],
+      ['3. Mã KH: Mã khách hàng (tùy chọn, tự động lấy từ QLDM)'],
+      ['4. Số lượng: Số lượng (tùy chọn, mặc định lấy từ QLPO)'],
+      ['5. ĐVT: Đơn vị tính (tùy chọn, mặc định lấy từ QLDM)'],
+      ['6. Phôi Liệu: Chi phí phôi liệu (bắt buộc)'],
+      ['7. Gia Công Ngoài: Chi phí gia công ngoài (bắt buộc)'],
+      ['8. Gia Công Nội Bộ: Chi phí gia công nội bộ (bắt buộc)'],
+      ['9. Xử lý Bề Mặt: Chi phí xử lý bề mặt (bắt buộc)'],
+      ['10. Vận Chuyển: Chi phí vận chuyển (bắt buộc)'],
+      ['11. Phí QLDN: Phí quản lý dự án (bắt buộc)'],
       [''],
       ['LƯU Ý:'],
       ['- Tổng phí sẽ được tự động tính = tổng các chi phí'],
       ['- Mã PO và Mã BV phải tồn tại trong QLPO trước khi import'],
+      ['- Mã KH và ĐVT tự động lấy từ QLDM nếu không nhập'],
       ['- Xóa các dòng hướng dẫn này trước khi import'],
       [''],
       ['DỮ LIỆU MẪU:']
@@ -728,7 +739,9 @@ const exportToExcel = () => {
       excelData.push({
         'Mã PO': group.ma_po,
         'Mã BV': `Số lượng: ${group.items.length}`,
+        'Mã KH': '',
         'Số lượng': '',
+        'ĐVT': '',
         'Phôi Liệu': '',
         'Gia Công Ngoài': '',
         'Gia Công Nội Bộ': '',
@@ -742,7 +755,9 @@ const exportToExcel = () => {
         excelData.push({
           'Mã PO': '',
           'Mã BV': item.ma_bv,
+          'Mã KH': item.ma_kh || '-',
           'Số lượng': item.so_luong || 0,
+          'ĐVT': item.dvt || 'p',
           'Phôi Liệu': item.phoi_lieu,
           'Gia Công Ngoài': item.gia_cong_ngoai,
           'Gia Công Nội Bộ': item.gia_cong_noi_bo,
@@ -756,7 +771,9 @@ const exportToExcel = () => {
       excelData.push({
         'Mã PO': '',
         'Mã BV': '',
+        'Mã KH': '',
         'Số lượng': '',
+        'ĐVT': '',
         'Phôi Liệu': '',
         'Gia Công Ngoài': '',
         'Gia Công Nội Bộ': '',
@@ -803,7 +820,9 @@ const handleFileImport = async (event: Event) => {
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as Array<{
           'Mã PO': string
           'Mã BV': string
+          'Mã KH'?: string
           'Số lượng'?: number
+          'ĐVT'?: string
           'Phôi Liệu': number
           'Gia Công Ngoài': number
           'Gia Công Nội Bộ': number
@@ -836,7 +855,9 @@ const handleFileImport = async (event: Event) => {
           validData.push({
             ma_po: String(row['Mã PO']).trim(),
             ma_bv: String(row['Mã BV']).trim(),
+            ma_kh: row['Mã KH'] ? String(row['Mã KH']).trim() : undefined,
             so_luong: row['Số lượng'] ? Number(row['Số lượng']) : 0,
+            dvt: row['ĐVT'] ? String(row['ĐVT']).trim() : undefined,
             phoi_lieu: Number(row['Phôi Liệu']) || 0,
             gia_cong_ngoai: Number(row['Gia Công Ngoài']) || 0,
             gia_cong_noi_bo: Number(row['Gia Công Nội Bộ']) || 0,

@@ -74,7 +74,9 @@
             <tr>
               <th class="px-3 py-2">Mã PO</th>
               <th class="px-3 py-2">Mã BV</th>
+              <th class="px-3 py-2">Mã KH</th>
               <th class="px-3 py-2">Số lượng</th>
+              <th class="px-3 py-2">ĐVT</th>
               <th class="px-3 py-2">Ngày tạo</th>
               <th class="px-3 py-2">Ngày giao</th>
               <th class="px-3 py-2">Thao tác</th>
@@ -82,10 +84,10 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="8" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="groupedData.length === 0">
-              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+              <td colspan="8" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
             </tr>
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
@@ -93,7 +95,7 @@
                 <td class="px-3 py-2 font-bold text-green-700 dark:text-green-300" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
-                <td class="px-3 py-2 font-medium">
+                <td class="px-3 py-2 font-medium" colspan="2">
                   Số lượng Mã BV: {{ group.items.length }}
                 </td>
                 <td class="px-3 py-2">
@@ -126,7 +128,9 @@
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <td class="px-3 py-2">{{ item.ma_bv }}</td>
+                <td class="px-3 py-2">{{ item.ma_kh || '-' }}</td>
                 <td class="px-3 py-2">{{ item.so_luong || 0 }}</td>
+                <td class="px-3 py-2">{{ item.dvt || 'p' }}</td>
                 <td class="px-3 py-2">{{ formatDate(item.ngay_tao) }}</td>
                 <td class="px-3 py-2">{{ formatDate(item.ngay_giao) }}</td>
                 <td class="px-3 py-2">
@@ -181,7 +185,19 @@
               label="Mã BV"
               placeholder="Chọn hoặc tìm Mã BV..."
               :required="true"
+              @update:modelValue="handleMaBVChange"
             />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Mã KH</label>
+            <input
+              v-model="formData.ma_kh"
+              type="text"
+              readonly
+              placeholder="Tự động từ QLDM"
+              class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600"
+            />
+            <p class="text-xs text-gray-500 mt-1">Mã khách hàng tự động lấy từ QLDM theo Mã BV</p>
           </div>
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Số lượng</label>
@@ -240,7 +256,7 @@ import * as XLSX from 'xlsx'
 
 const data = ref<QLPO[]>([])
 const maPOList = ref<{ ma_po: string }[]>([])
-const maBVList = ref<{ ma_bv: string }[]>([])
+const maBVList = ref<{ ma_bv: string; ma_kh?: string }[]>([])
 const filterMaPO = ref('')
 const searchMaPO = ref('')
 const showAddModal = ref(false)
@@ -250,6 +266,7 @@ const loading = ref(false)
 const formData = ref({
   ma_po: '',
   ma_bv: '',
+  ma_kh: '',
   so_luong: 0,
   ngay_tao: '',
   ngay_giao: '',
@@ -329,10 +346,20 @@ const loadData = async () => {
 
 const loadMaBVList = async () => {
   try {
-    const response = await qldmService.getAllMaBV()
-    maBVList.value = response.data
+    const response = await qldmService.getAll()
+    maBVList.value = response.data.map(item => ({
+      ma_bv: item.ma_bv,
+      ma_kh: item.ma_kh
+    }))
   } catch (error) {
     console.error('Lỗi khi tải danh sách Mã BV:', error)
+  }
+}
+
+const handleMaBVChange = (ma_bv: string) => {
+  const selected = maBVList.value.find(item => item.ma_bv === ma_bv)
+  if (selected) {
+    formData.value.ma_kh = selected.ma_kh || ''
   }
 }
 
@@ -378,6 +405,7 @@ const editItem = (item: QLPO) => {
   formData.value = {
     ma_po: item.ma_po,
     ma_bv: item.ma_bv,
+    ma_kh: item.ma_kh || '',
     so_luong: item.so_luong || 0,
     ngay_tao: item.ngay_tao || '',
     ngay_giao: item.ngay_giao || '',
@@ -436,6 +464,7 @@ const closeModal = () => {
   formData.value = {
     ma_po: '',
     ma_bv: '',
+    ma_kh: '',
     so_luong: 0,
     ngay_tao: '',
     ngay_giao: '',
@@ -450,6 +479,9 @@ const exportToExcel = () => {
       excelData.push({
         'Mã PO': group.ma_po,
         'Mã BV': `Số lượng: ${group.items.length}`,
+        'Mã KH': '',
+        'Số lượng': '',
+        'ĐVT': '',
         'Ngày tạo': formatDate(group.ngay_tao),
         'Ngày giao': formatDate(group.ngay_giao)
       })
@@ -458,6 +490,9 @@ const exportToExcel = () => {
         excelData.push({
           'Mã PO': '',
           'Mã BV': item.ma_bv,
+          'Mã KH': item.ma_kh || '',
+          'Số lượng': item.so_luong || 0,
+          'ĐVT': item.dvt || 'p',
           'Ngày tạo': formatDate(item.ngay_tao),
           'Ngày giao': formatDate(item.ngay_giao)
         })
@@ -466,6 +501,9 @@ const exportToExcel = () => {
       excelData.push({
         'Mã PO': '',
         'Mã BV': '',
+        'Mã KH': '',
+        'Số lượng': '',
+        'ĐVT': '',
         'Ngày tạo': '',
         'Ngày giao': ''
       })
@@ -500,46 +538,35 @@ const downloadTemplate = () => {
       {
         'Mã PO': 'PO001',
         'Mã BV': 'BV001',
+        'Mã KH': 'KH001',
+        'Số lượng': 100,
+        'ĐVT': 'p',
         'Ngày tạo': '2024-01-15',
         'Ngày giao': '2024-01-20'
       },
       {
         'Mã PO': 'PO001',
         'Mã BV': 'BV002',
+        'Mã KH': 'KH002',
+        'Số lượng': 150,
+        'ĐVT': 'p',
         'Ngày tạo': '2024-01-15',
         'Ngày giao': '2024-01-20'
       },
       {
         'Mã PO': 'PO002',
         'Mã BV': 'BV003',
+        'Mã KH': 'KH001',
+        'Số lượng': 200,
+        'ĐVT': 'p',
         'Ngày tạo': '2024-01-16',
         'Ngày giao': '2024-01-21'
       }
     ]
     
-    // Thêm ghi chú hướng dẫn
-    const instructions = [
-      ['HƯỚNG DẪN SỬ DỤNG FILE MẪU IMPORT PO'],
-      [''],
-      ['1. Mã PO: Mã định danh của Purchase Order (VD: PO001, PO002)'],
-      ['2. Mã BV: Mã bao vải (phải tồn tại trong hệ thống)'],
-      ['3. Ngày tạo: Định dạng YYYY-MM-DD (VD: 2024-01-15)'],
-      ['4. Ngày giao: Định dạng YYYY-MM-DD (VD: 2024-01-20)'],
-      [''],
-      ['LƯU Ý:'],
-      ['- Các dòng có cùng Mã PO sẽ được gộp thành 1 nhóm'],
-      ['- Mã BV phải tồn tại trong danh mục trước khi import'],
-      ['- Ngày giao nên sau ngày tạo'],
-      ['- Xóa các dòng hướng dẫn này trước khi import'],
-      [''],
-      ['DỮ LIỆU MẪU:']
-    ]
-    
-    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
     const wsData = XLSX.utils.json_to_sheet(templateData)
     
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn')
     XLSX.utils.book_append_sheet(wb, wsData, 'Dữ liệu mẫu')
     
     XLSX.writeFile(wb, 'QLPO_Template.xlsx')
@@ -574,6 +601,9 @@ const handleFileImport = async (event: Event) => {
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as Array<{
           'Mã PO': string
           'Mã BV': string
+          'Mã KH'?: string
+          'Số lượng'?: number
+          'ĐVT'?: string
           'Ngày tạo': string | number
           'Ngày giao': string | number
         }>
@@ -588,6 +618,9 @@ const handleFileImport = async (event: Event) => {
         const validData: Array<{
           ma_po: string
           ma_bv: string
+          ma_kh?: string
+          so_luong?: number
+          dvt?: string
           ngay_tao: string
           ngay_giao: string
         }> = []
@@ -621,6 +654,9 @@ const handleFileImport = async (event: Event) => {
           validData.push({
             ma_po: String(row['Mã PO']).trim(),
             ma_bv: String(row['Mã BV']).trim(),
+            ma_kh: row['Mã KH'] ? String(row['Mã KH']).trim() : undefined,
+            so_luong: row['Số lượng'] ? Number(row['Số lượng']) : undefined,
+            dvt: row['ĐVT'] ? String(row['ĐVT']).trim() : undefined,
             ngay_tao: row['Ngày tạo'] ? convertExcelDate(row['Ngày tạo']) : '',
             ngay_giao: row['Ngày giao'] ? convertExcelDate(row['Ngày giao']) : ''
           })

@@ -42,11 +42,11 @@ export const getAllMaBV = async (req: AuthRequest, res: Response) => {
 // Tạo định mức mới
 export const createQLDM = async (req: AuthRequest, res: Response) => {
   try {
-    const { ma_bv, so_bg, ma_kh, so_luong, don_gia } = req.body;
+    const { ma_bv, so_bg, ma_kh, so_luong, dvt, don_gia, don_vi_tien_te } = req.body;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qldm (ma_bv, so_bg, ma_kh, so_luong, don_gia) VALUES (?, ?, ?, ?, ?)',
-      [ma_bv, so_bg || null, ma_kh || null, so_luong, don_gia]
+      'INSERT INTO qldm (ma_bv, so_bg, ma_kh, so_luong, dvt, don_gia, don_vi_tien_te) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [ma_bv, so_bg || null, ma_kh || null, so_luong, dvt || 'p', don_gia, don_vi_tien_te || 'VND']
     );
 
     res.status(201).json({
@@ -61,11 +61,11 @@ export const createQLDM = async (req: AuthRequest, res: Response) => {
 // Cập nhật định mức
 export const updateQLDM = async (req: AuthRequest, res: Response) => {
   try {
-    const { ma_bv, so_bg, ma_kh, so_luong, don_gia } = req.body;
+    const { ma_bv, so_bg, ma_kh, so_luong, dvt, don_gia, don_vi_tien_te } = req.body;
 
     await pool.query(
-      'UPDATE qldm SET ma_bv = ?, so_bg = ?, ma_kh = ?, so_luong = ?, don_gia = ? WHERE id = ?',
-      [ma_bv, so_bg || null, ma_kh || null, so_luong, don_gia, req.params.id]
+      'UPDATE qldm SET ma_bv = ?, so_bg = ?, ma_kh = ?, so_luong = ?, dvt = ?, don_gia = ?, don_vi_tien_te = ? WHERE id = ?',
+      [ma_bv, so_bg || null, ma_kh || null, so_luong, dvt || 'p', don_gia, don_vi_tien_te || 'VND', req.params.id]
     );
 
     res.json({ message: 'Cập nhật thành công' });

@@ -6,7 +6,9 @@ export interface QLDM {
   so_bg?: string;
   ma_kh?: string;
   so_luong: number;
+  dvt?: string;
   don_gia: number;
+  don_vi_tien_te?: string;
   created_at?: string;
   updated_at?: string;
 }

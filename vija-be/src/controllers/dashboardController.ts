@@ -36,7 +36,15 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
         po.id as id,
         po.ma_po,
         po.ma_bv,
+        po.ma_kh,
         po.so_luong,
+        COALESCE(
+          (SELECT dvt 
+           FROM qldm 
+           WHERE ma_bv = po.ma_bv 
+           LIMIT 1),
+          'p'
+        ) as dvt,
         COALESCE(
           (SELECT don_gia 
            FROM qldm 
@@ -51,6 +59,13 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
            LIMIT 1),
           0
         ) as don_gia,
+        COALESCE(
+          (SELECT don_vi_tien_te 
+           FROM qldm 
+           WHERE ma_bv = po.ma_bv 
+           LIMIT 1),
+          'VND'
+        ) as don_vi_tien_te,
         (po.so_luong * COALESCE(
           (SELECT don_gia 
            FROM qldm 

@@ -51,8 +51,11 @@
             <tr>
               <th class="px-4 py-3">Mã PO</th>
               <th class="px-4 py-3">Mã BV</th>
+              <th class="px-4 py-3">Mã KH</th>
               <th class="px-4 py-3">Số Lượng</th>
+              <th class="px-4 py-3">ĐVT</th>
               <th class="px-4 py-3">Đơn giá</th>
+              <th class="px-4 py-3">ĐV Tiền Tệ</th>
               <th class="px-4 py-3">Thành Tiền</th>
               <th class="px-4 py-3">Phôi Liệu</th>
               <th class="px-4 py-3">GC Ngoài</th>
@@ -67,10 +70,10 @@
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="14" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="17" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="dashboardData.length === 0">
-              <td colspan="14" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+              <td colspan="17" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
             </tr>
             <tr
               v-else
@@ -87,8 +90,11 @@
                 {{ item.ma_po || '-' }}
               </td>
               <td class="px-4 py-3">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
               <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ item.so_luong }}</td>
+              <td class="px-4 py-3">{{ item.isTotal ? '' : (item.dvt || 'p') }}</td>
               <td class="px-4 py-3">{{ item.isTotal ? '' : formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3">{{ item.isTotal ? '' : (item.don_vi_tien_te || 'VND') }}</td>
               <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : 'font-medium'">{{ formatCurrency(item.thanh_tien) }}</td>
               <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.phoi_lieu) }}</td>
               <td class="px-4 py-3" :class="item.isTotal ? 'font-bold' : ''">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
@@ -122,8 +128,11 @@ interface DashboardItem {
   id: number
   ma_po: string
   ma_bv: string
+  ma_kh?: string
   so_luong: number
+  dvt?: string
   don_gia: number
+  don_vi_tien_te?: string
   thanh_tien: number
   phoi_lieu: number
   gia_cong_ngoai: number
@@ -212,8 +221,11 @@ const groupedDashboardData = computed(() => {
       id: -Math.abs(maPO.charCodeAt(0) + Date.now()),
       ma_po: `TỔNG `,
       ma_bv: '',
+      ma_kh: '',
       so_luong: totalSoLuong,
+      dvt: '',
       don_gia: 0,
+      don_vi_tien_te: '',
       thanh_tien: totalThanhTien,
       phoi_lieu: totalPhoiLieu,
       gia_cong_ngoai: totalGiaCongNgoai,
@@ -277,8 +289,11 @@ const exportToExcel = () => {
   const excelData = dataToExport.map(item => ({
     'Mã PO': item.ma_po || '-',
     'Mã BV': item.ma_bv,
+    'Mã KH': item.ma_kh || '-',
     'Số Lượng': item.so_luong,
+    'ĐVT': item.isTotal ? '' : (item.dvt || 'p'),
     'Đơn giá': item.isTotal ? '' : item.don_gia,
+    'ĐV Tiền Tệ': item.isTotal ? '' : (item.don_vi_tien_te || 'VND'),
     'Thành Tiền': item.thanh_tien,
     'Phôi Liệu': item.phoi_lieu,
     'Gia Công Ngoài': item.gia_cong_ngoai,

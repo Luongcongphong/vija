@@ -4,8 +4,11 @@ export interface DashboardData {
   id: number;
   po: string;
   ma_bv: string;
+  ma_kh?: string;
   so_luong: number;
+  dvt?: string;
   don_gia: number;
+  don_vi_tien_te?: string;
   thanh_tien: number;
   phoi_lieu: number;
   gia_cong_ngoai: number;

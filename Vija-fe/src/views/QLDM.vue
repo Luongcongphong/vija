@@ -78,16 +78,18 @@
               <th class="px-4 py-3">Số BG</th>
               <th class="px-4 py-3">Mã KH</th>
               <th class="px-4 py-3">Số lượng</th>
+              <th class="px-4 py-3">ĐVT</th>
               <th class="px-4 py-3">Đơn giá</th>
+              <th class="px-4 py-3">ĐV Tiền tệ</th>
               <th class="px-4 py-3">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="6" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="8" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="filteredData.length === 0">
-              <td colspan="6" class="px-4 py-8 text-center text-gray-500">{{ searchMaBV ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
+              <td colspan="8" class="px-4 py-8 text-center text-gray-500">{{ searchMaBV ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
             </tr>
             <tr
               v-else
@@ -99,7 +101,9 @@
               <td class="px-4 py-3">{{ item.so_bg || '-' }}</td>
               <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
               <td class="px-4 py-3">{{ item.so_luong }}</td>
+              <td class="px-4 py-3">{{ item.dvt || 'p' }}</td>
               <td class="px-4 py-3">{{ formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3">{{ item.don_vi_tien_te || 'VND' }}</td>
               <td class="px-4 py-3">
                 <button
                   @click="editItem(item)"
@@ -125,9 +129,9 @@
     <!-- Modal thêm/sửa -->
     <div
       v-if="showAddModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-99999"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-99999 p-4"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
           {{ editId !== null ? 'Sửa định mức' : 'Thêm định mức mới' }}
         </h2>
@@ -173,6 +177,17 @@
             <p class="text-xs text-gray-500 mt-1">Số lượng định mức (áp dụng cho SL ≤ giá trị này)</p>
           </div>
           <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">ĐVT (Đơn vị tính)</label>
+            <select
+              v-model="formData.dvt"
+              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="p">p</option>
+              <option value="cặp">cặp</option>
+              <option value="bộ">bộ</option>
+            </select>
+          </div>
+          <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Đơn giá</label>
             <input
               v-model.number="formData.don_gia"
@@ -182,6 +197,20 @@
               placeholder="VD: 50000"
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">ĐV Tiền tệ</label>
+            <select
+              v-model="formData.don_vi_tien_te"
+              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="VND">VND</option>
+              <option value="AUD">AUD</option>
+              <option value="SGD">SGD</option>
+              <option value="JPY">JPY</option>
+              <option value="CNY">CNY</option>
+              <option value="KRW">KRW</option>
+            </select>
           </div>
           <div class="flex justify-end gap-2">
             <button
@@ -222,7 +251,9 @@ const formData = ref({
   so_bg: '',
   ma_kh: '',
   so_luong: 0,
+  dvt: 'p',
   don_gia: 0,
+  don_vi_tien_te: 'VND',
 })
 
 
@@ -308,7 +339,9 @@ const editItem = (item: QLDM) => {
     so_bg: item.so_bg || '',
     ma_kh: item.ma_kh || '',
     so_luong: item.so_luong,
+    dvt: item.dvt || 'p',
     don_gia: item.don_gia,
+    don_vi_tien_te: item.don_vi_tien_te || 'VND',
   }
   showAddModal.value = true
 }
@@ -336,7 +369,9 @@ const closeModal = () => {
     so_bg: '',
     ma_kh: '',
     so_luong: 0,
+    dvt: 'p',
     don_gia: 0,
+    don_vi_tien_te: 'VND',
   }
 }
 
@@ -348,51 +383,34 @@ const downloadTemplate = () => {
         'Số BG': 'BG001',
         'Mã KH': 'KH001',
         'Số lượng': 50,
-        'Đơn giá': 23000
+        'ĐVT': 'p',
+        'Đơn giá': 23000,
+        'ĐV Tiền tệ': 'VND'
       },
       {
         'Mã BV': 'BV001',
         'Số BG': 'BG001',
         'Mã KH': 'KH001',
         'Số lượng': 100,
-        'Đơn giá': 12000
+        'ĐVT': 'p',
+        'Đơn giá': 12000,
+        'ĐV Tiền tệ': 'VND'
       },
       {
         'Mã BV': 'BV002',
         'Số BG': 'BG002',
         'Mã KH': 'KH002',
         'Số lượng': 200,
-        'Đơn giá': 8000
+        'ĐVT': 'cặp',
+        'Đơn giá': 8000,
+        'ĐV Tiền tệ': 'VND'
       }
     ]
     
-    const instructions = [
-      ['HƯỚNG DẪN SỬ DỤNG FILE MẪU IMPORT ĐỊNH MỨC'],
-      [''],
-      ['1. Mã BV: Mã bao vải (bắt buộc)'],
-      ['2. Số BG: Số báo giá (tùy chọn)'],
-      ['3. Mã KH: Mã khách hàng (tùy chọn)'],
-      ['4. Số lượng: Ngưỡng số lượng áp dụng (bắt buộc)'],
-      ['5. Đơn giá: Đơn giá cho ngưỡng này (bắt buộc)'],
-      [''],
-      ['LOGIC NGƯỠNG GIÁ:'],
-      ['- Cùng 1 Mã BV có thể có nhiều ngưỡng giá'],
-      ['- VD: BV001 có SL=50 giá 23,000đ và SL=100 giá 12,000đ'],
-      ['- Khi PO có SL=30 → lấy giá 23,000đ (ngưỡng 50)'],
-      ['- Khi PO có SL=80 → lấy giá 12,000đ (ngưỡng 100)'],
-      [''],
-      ['LƯU Ý:'],
-      ['- Xóa các dòng hướng dẫn này trước khi import'],
-      [''],
-      ['DỮ LIỆU MẪU:']
-    ]
-    
     const wb = XLSX.utils.book_new()
-    const wsInstructions = XLSX.utils.aoa_to_sheet(instructions)
     const wsData = XLSX.utils.json_to_sheet(templateData)
     
-    XLSX.utils.book_append_sheet(wb, wsInstructions, 'Hướng dẫn')
-    XLSX.utils.book_append_sheet(wb, wsData, 'Dữ liệu mẫu')
+    XLSX.utils.book_append_sheet(wb, wsData, 'Định mức')
     
     XLSX.writeFile(wb, 'QLDM_Template.xlsx')
     alert('Đã tải file mẫu thành công!')
@@ -409,7 +427,9 @@ const exportToExcel = () => {
       'Số BG': item.so_bg || '',
       'Mã KH': item.ma_kh || '',
       'Số lượng': item.so_luong,
-      'Đơn giá': item.don_gia
+      'ĐVT': item.dvt || 'p',
+      'Đơn giá': item.don_gia,
+      'ĐV Tiền tệ': item.don_vi_tien_te || 'VND'
     }))
     
     const ws = XLSX.utils.json_to_sheet(excelData)
@@ -450,7 +470,9 @@ const handleFileImport = async (event: Event) => {
           'Số BG'?: string
           'Mã KH'?: string
           'Số lượng': number
+          'ĐVT'?: string
           'Đơn giá': number
+          'ĐV Tiền tệ'?: string
         }>
         
         if (jsonData.length === 0) {
@@ -483,7 +505,9 @@ const handleFileImport = async (event: Event) => {
             so_bg: row['Số BG'] ? String(row['Số BG']).trim() : '',
             ma_kh: row['Mã KH'] ? String(row['Mã KH']).trim() : '',
             so_luong: Number(row['Số lượng']),
-            don_gia: Number(row['Đơn giá'])
+            dvt: row['ĐVT'] ? String(row['ĐVT']).trim() : 'p',
+            don_gia: Number(row['Đơn giá']),
+            don_vi_tien_te: row['ĐV Tiền tệ'] ? String(row['ĐV Tiền tệ']).trim() : 'VND'
           })
         })
         

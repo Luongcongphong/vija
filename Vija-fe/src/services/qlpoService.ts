@@ -4,7 +4,9 @@ export interface QLPO {
   id?: number;
   ma_po: string;
   ma_bv: string;
+  ma_kh?: string;
   so_luong?: number;
+  dvt?: string;
   ngay_tao?: string;
   ngay_giao?: string;
   created_at?: string;
