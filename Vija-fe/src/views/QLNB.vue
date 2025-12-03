@@ -36,35 +36,68 @@
 
     <!-- Filter with Search -->
     <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
-      <div class="flex gap-2">
-        <input
-          v-model="searchMaPO"
-          type="text"
-          placeholder="Tìm kiếm Mã PO..."
-          @keyup.enter="selectFirstMatch"
-          class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        />
-        <select
-          v-model="filterMaPO"
-          class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        >
-          <option value="">Tất cả</option>
-          <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
-            {{ item.ma_po }}
-          </option>
-        </select>
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Lọc theo Mã PO -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaPO"
+              type="text"
+              placeholder="Tìm kiếm Mã PO..."
+              @keyup.enter="selectFirstMatchPO"
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaPO"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
+                {{ item.ma_po }}
+              </option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Lọc theo Mã BV -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã BV:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaBV"
+              type="text"
+              placeholder="Tìm kiếm Mã BV..."
+              @keyup.enter="selectFirstMatchBV"
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaBV"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaBVList" :key="item" :value="item">
+                {{ item }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-2 mt-2">
         <button
-          v-if="filterMaPO"
+          v-if="filterMaPO || filterMaBV"
           @click="clearFilter"
           class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
         >
-          Xóa lọc
+          Xóa tất cả lọc
         </button>
+        <p v-if="filterMaPO || filterMaBV" class="text-xs text-green-600 flex items-center">
+          Đang hiển thị: {{ filteredData.length }} kết quả
+          <span v-if="filterMaPO"> cho PO: {{ filterMaPO }}</span>
+          <span v-if="filterMaBV"> cho BV: {{ filterMaBV }}</span>
+        </p>
       </div>
-      <p v-if="filterMaPO" class="text-xs text-green-600 mt-2">
-        Đang hiển thị: {{ filteredData.length }} kết quả cho {{ filterMaPO }}
-      </p>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -72,19 +105,19 @@
         <table class="w-full text-sm text-left border-collapse">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã PO</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã BV</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã KH</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Số lượng</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">ĐVT</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Phôi Liệu</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Gia Công Ngoài</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Gia Công Nội Bộ</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Xử lý Bề Mặt</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Vận Chuyển</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Phí QLDN</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Tổng Phí</th>
-              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Thao tác</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã PO</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã BV</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã KH</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">SL</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">ĐVT</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Phôi Liệu</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">GC Ngoài</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">GC Nội Bộ</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">XL Bề Mặt</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Vận Chuyển</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Phí QLDN</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Tổng Phí</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -97,13 +130,14 @@
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
               <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
-                <td class="px-4 py-3 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
+                <td class="px-3 py-1.5 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
-                <td class="px-4 py-2 font-medium border border-gray-300 dark:border-gray-600" colspan="11">
+                <td class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600" colspan="2">
                   SLBV: {{ group.items.length }}
                 </td>
-                <td class="px-4 py-2 border border-gray-300 dark:border-gray-600">
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="9"></td>
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600">
                   <button
                     @click="deletePO(group.ma_po)"
                     class="text-red-600 hover:text-red-800 text-xs font-medium"
@@ -119,18 +153,18 @@
                 :key="item.id"
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.so_luong || 0 }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.phoi_lieu) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.van_chuyen) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.phi_qldn) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600 font-medium">{{ formatCurrency(item.tong_phi || 0) }}</td>
-                <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.so_luong || 0 }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.phoi_lieu) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.gia_cong_ngoai) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.gia_cong_noi_bo) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.xu_ly_be_mat) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.van_chuyen) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.phi_qldn) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 font-medium">{{ formatCurrency(item.tong_phi || 0) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   <button
                     @click="editItem(item)"
                     class="text-blue-600 hover:text-blue-800 mr-3"
@@ -331,6 +365,8 @@ const qlpoData = ref<Array<{ ma_po: string; ma_bv: string; so_luong?: number }>>
 const maPOList = ref<{ ma_po: string }[]>([])
 const filterMaPO = ref('')
 const searchMaPO = ref('')
+const filterMaBV = ref('')
+const searchMaBV = ref('')
 const showAddModal = ref(false)
 const editId = ref<number | null>(null)
 const loading = ref(false)
@@ -354,10 +390,33 @@ const filteredMaPOList = computed(() => {
   )
 })
 
-// Filter data by selected Mã PO
+// Get unique Mã BV list from data
+const maBVList = computed(() => {
+  const uniqueBV = [...new Set(data.value.map(item => item.ma_bv))]
+  return uniqueBV.sort()
+})
+
+// Filter Mã BV list by search
+const filteredMaBVList = computed(() => {
+  if (!searchMaBV.value) return maBVList.value
+  return maBVList.value.filter(item => 
+    item.toLowerCase().includes(searchMaBV.value.toLowerCase())
+  )
+})
+
+// Filter data by selected Mã PO and/or Mã BV
 const filteredData = computed(() => {
-  if (!filterMaPO.value) return data.value
-  return data.value.filter(item => item.ma_po === filterMaPO.value)
+  let result = data.value
+  
+  if (filterMaPO.value) {
+    result = result.filter(item => item.ma_po === filterMaPO.value)
+  }
+  
+  if (filterMaBV.value) {
+    result = result.filter(item => item.ma_bv === filterMaBV.value)
+  }
+  
+  return result
 })
 
 // Gộp dữ liệu theo Mã PO
@@ -377,15 +436,23 @@ const groupedData = computed(() => {
   })).sort((a, b) => b.ma_po.localeCompare(a.ma_po))
 })
 
-const selectFirstMatch = () => {
+const selectFirstMatchPO = () => {
   if (filteredMaPOList.value.length > 0) {
     filterMaPO.value = filteredMaPOList.value[0].ma_po
+  }
+}
+
+const selectFirstMatchBV = () => {
+  if (filteredMaBVList.value.length > 0) {
+    filterMaBV.value = filteredMaBVList.value[0]
   }
 }
 
 const clearFilter = () => {
   filterMaPO.value = ''
   searchMaPO.value = ''
+  filterMaBV.value = ''
+  searchMaBV.value = ''
 }
 
 // Tạo options cho Mã PO

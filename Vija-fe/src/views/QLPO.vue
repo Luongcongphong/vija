@@ -75,7 +75,7 @@
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã PO</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã BV</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã KH</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Số lượng</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">SL</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">ĐVT</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày tạo</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày giao</th>
@@ -92,19 +92,14 @@
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
               <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
-                <td class="px-3 py-2 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
+                <td class="px-3 py-1.5 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
-                <td class="px-3 py-2 font-medium border border-gray-300 dark:border-gray-600" colspan="2">
+                <td class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600" colspan="2">
                   SLBV: {{ group.items.length }}
                 </td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
-                  {{ formatDate(group.ngay_tao) }}
-                </td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
-                  {{ formatDate(group.ngay_giao) }}
-                </td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 flex gap-2">
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="3"></td>
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600 flex gap-2">
                   <button
                     @click="openAddModal(group.ma_po, group.ngay_tao, group.ngay_giao)"
                     class="text-green-600 hover:text-green-800 text-xs"
