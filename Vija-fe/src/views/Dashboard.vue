@@ -153,10 +153,7 @@ const searchMaPO = ref('')
 const loading = ref(false)
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(value)
+  return new Intl.NumberFormat('vi-VN').format(value)
 }
 
 // Filter Mã PO list by search
