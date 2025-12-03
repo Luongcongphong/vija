@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
+      'fixed flex flex-col top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
       {
         'lg:w-[220px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[70px]': !isExpanded && !isHovered,
@@ -67,7 +67,29 @@
             <ul class="flex flex-col gap-4">
               <li v-for="(item, index) in menuGroup.items" :key="item.name">
                 <button
-                  v-if="item.subItems"
+                  v-if="item.isLogout"
+                  @click="handleLogout"
+                  :class="[
+                    'menu-item group w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20',
+                    !isExpanded && !isHovered
+                      ? 'lg:justify-center'
+                      : 'lg:justify-start',
+                  ]"
+                >
+                  <span class="menu-item-icon-inactive">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </span>
+                  <span
+                    v-if="isExpanded || isHovered || isMobileOpen"
+                    class="menu-item-text"
+                  >
+                    {{ item.name }}
+                  </span>
+                </button>
+                <button
+                  v-else-if="item.subItems"
                   @click="toggleSubmenu(groupIndex, index)"
                   :class="[
                     'menu-item group w-full',
@@ -213,7 +235,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   GridIcon,
@@ -235,6 +257,13 @@ import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
+const router = useRouter();
+
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  router.push('/login')
+}
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
@@ -271,6 +300,11 @@ const menuGroups = [
         icon: UserCircleIcon,
         name: "QL User",
         path: "/qluser",
+      },
+      {
+        icon: null,
+        name: "Đăng xuất",
+        isLogout: true,
       },
     ],
   },

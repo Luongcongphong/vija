@@ -6,7 +6,6 @@
       class="flex-1 transition-all duration-300 ease-in-out"
       :class="[isExpanded || isHovered ? 'lg:ml-[220px]' : 'lg:ml-[70px]']"
     >
-      <app-header />
       <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
         <slot></slot>
       </div>
@@ -40,7 +39,6 @@
 
 <script setup lang="ts">
 import { useSidebar } from '@/composables/useSidebar'
-import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import Backdrop from './Backdrop.vue'
 const { isExpanded, isHovered } = useSidebar()
