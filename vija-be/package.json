@@ -9,7 +9,14 @@
     "start": "node dist/server.js",
     "create-admin": "ts-node scripts/createAdmin.ts",
     "create-db": "ts-node scripts/createDatabase.ts",
-    "setup": "ts-node scripts/setupDatabase.ts"
+    "setup": "ts-node scripts/setupDatabase.ts",
+    "pm2:start": "pm2 start ecosystem.config.js --env production",
+    "pm2:dev": "pm2 start ecosystem.config.js --env development",
+    "pm2:stop": "pm2 stop vija-backend",
+    "pm2:restart": "pm2 restart vija-backend",
+    "pm2:delete": "pm2 delete vija-backend",
+    "pm2:logs": "pm2 logs vija-backend",
+    "pm2:monit": "pm2 monit"
   },
   "keywords": [],
   "author": "",
