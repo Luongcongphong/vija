@@ -44,6 +44,7 @@
           v-model="searchMaBV"
           type="text"
           placeholder="Tìm kiếm Mã BV..."
+          @keyup.enter="selectFirstMatch"
           class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         />
         <select
@@ -239,6 +240,12 @@ const filteredData = computed(() => {
   if (!filterMaBV.value) return data.value
   return data.value.filter(item => item.ma_bv === filterMaBV.value)
 })
+
+const selectFirstMatch = () => {
+  if (filteredMaBVList.value.length > 0) {
+    filterMaBV.value = filteredMaBVList.value[0].ma_bv
+  }
+}
 
 const clearFilter = () => {
   filterMaBV.value = ''

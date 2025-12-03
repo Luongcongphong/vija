@@ -19,6 +19,7 @@
           v-model="searchMaPO"
           type="text"
           placeholder="Tìm kiếm Mã PO..."
+          @keyup.enter="selectFirstMatch"
           class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         />
         <select
@@ -209,7 +210,7 @@ const groupedDashboardData = computed(() => {
     // Add summary row
     result.push({
       id: -Math.abs(maPO.charCodeAt(0) + Date.now()),
-      ma_po: `TỔNG ${maPO}`,
+      ma_po: `TỔNG `,
       ma_bv: '',
       so_luong: totalSoLuong,
       don_gia: 0,
@@ -251,6 +252,12 @@ const loadData = async () => {
     alert('Không thể tải dữ liệu Dashboard!')
   } finally {
     loading.value = false
+  }
+}
+
+const selectFirstMatch = () => {
+  if (filteredMaPOList.value.length > 0) {
+    filterMaPO.value = filteredMaPOList.value[0].ma_po
   }
 }
 

@@ -42,6 +42,7 @@
           v-model="searchMaPO"
           type="text"
           placeholder="Tìm kiếm Mã PO..."
+          @keyup.enter="selectFirstMatch"
           class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         />
         <select
@@ -289,6 +290,12 @@ const groupedData = computed(() => {
     }
   }).sort((a, b) => b.ma_po.localeCompare(a.ma_po))
 })
+
+const selectFirstMatch = () => {
+  if (filteredMaPOList.value.length > 0) {
+    filterMaPO.value = filteredMaPOList.value[0].ma_po
+  }
+}
 
 const clearFilter = () => {
   filterMaPO.value = ''
