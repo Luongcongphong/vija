@@ -6,7 +6,7 @@
       class="flex-1 transition-all duration-300 ease-in-out"
       :class="[isExpanded || isHovered ? 'lg:ml-[220px]' : 'lg:ml-[70px]']"
     >
-      <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <div class="p-4 md:p-6 lg:p-8">
         <slot></slot>
       </div>
       <!-- Footer -->
