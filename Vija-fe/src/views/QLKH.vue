@@ -70,7 +70,7 @@
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          {{ editIndex !== null ? 'Sửa' : 'Thêm mới' }}
+          {{ editId !== null ? 'Sửa' : 'Thêm mới' }}
         </h2>
         <form @submit.prevent="saveItem">
           <div class="mb-4">
@@ -205,7 +205,7 @@ const maBVOptions = computed(() => {
 const loadQLPO = async () => {
   try {
     const result = await qlpoService.getAll()
-    qlpoData.value = result
+    qlpoData.value = result.data
   } catch (error) {
     console.error('Lỗi khi tải QLPO:', error)
   }
@@ -215,7 +215,7 @@ const loadQLPO = async () => {
 const loadQLDM = async () => {
   try {
     const result = await qldmService.getAll()
-    qldmData.value = result
+    qldmData.value = result.data
   } catch (error) {
     console.error('Lỗi khi tải QLDM:', error)
   }

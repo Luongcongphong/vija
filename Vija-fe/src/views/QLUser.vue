@@ -36,8 +36,8 @@
             >
               <td class="px-4 py-3">{{ item.username }}</td>
               <td class="px-4 py-3">
-                <span :class="getRoleColor(item.role)" class="px-2 py-1 rounded text-xs font-medium">
-                  {{ getRoleName(item.role) }}
+                <span :class="getRoleColor(item.role || 'sales')" class="px-2 py-1 rounded text-xs font-medium">
+                  {{ getRoleName(item.role || 'sales') }}
                 </span>
               </td>
               <td class="px-4 py-3">{{ formatDate(item.created_at) }}</td>
