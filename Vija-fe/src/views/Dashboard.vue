@@ -13,35 +13,68 @@
 
     <!-- Filter -->
     <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
-      <div class="flex gap-2">
-        <input
-          v-model="searchMaPO"
-          type="text"
-          placeholder="Tìm kiếm Mã PO..."
-          @keyup.enter="selectFirstMatch"
-          class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        />
-        <select
-          v-model="filterMaPO"
-          class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        >
-          <option value="">Tất cả</option>
-          <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
-            {{ item.ma_po }}
-          </option>
-        </select>
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Lọc theo Mã PO -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaPO"
+              type="text"
+              placeholder="Tìm kiếm Mã PO..."
+              @keyup.enter="selectFirstMatchPO"
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaPO"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
+                {{ item.ma_po }}
+              </option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Lọc theo Mã BV -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã BV:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaBV"
+              type="text"
+              placeholder="Tìm kiếm Mã BV..."
+              @keyup.enter="selectFirstMatchBV"
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaBV"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaBVList" :key="item" :value="item">
+                {{ item }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-2 mt-2">
         <button
-          v-if="filterMaPO"
+          v-if="filterMaPO || filterMaBV"
           @click="clearFilters"
           class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
         >
-          Xóa lọc
+          Xóa tất cả lọc
         </button>
+        <p v-if="filterMaPO || filterMaBV" class="text-xs text-green-600 flex items-center">
+          Đang hiển thị: {{ groupedDashboardData.length }} dòng
+          <span v-if="filterMaPO"> cho PO: {{ filterMaPO }}</span>
+          <span v-if="filterMaBV"> cho BV: {{ filterMaBV }}</span>
+        </p>
       </div>
-      <p v-if="filterMaPO" class="text-xs text-green-600 mt-2">
-        Đang hiển thị: {{ groupedDashboardData.length }} dòng (bao gồm tổng) cho {{ filterMaPO }}
-      </p>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -150,6 +183,8 @@ const dashboardData = ref<DashboardItem[]>([])
 const maPOList = ref<{ ma_po: string }[]>([])
 const filterMaPO = ref('')
 const searchMaPO = ref('')
+const filterMaBV = ref('')
+const searchMaBV = ref('')
 const loading = ref(false)
 
 const formatCurrency = (value: number) => {
@@ -164,12 +199,33 @@ const filteredMaPOList = computed(() => {
   )
 })
 
-// Filter dashboard data
-const filteredDashboardData = computed(() => {
-  if (!filterMaPO.value) return dashboardData.value
-  return dashboardData.value.filter(item => 
-    item.ma_po && item.ma_po.includes(filterMaPO.value)
+// Get unique Mã BV list from data
+const maBVList = computed(() => {
+  const uniqueBV = [...new Set(dashboardData.value.map(item => item.ma_bv))]
+  return uniqueBV.sort()
+})
+
+// Filter Mã BV list by search
+const filteredMaBVList = computed(() => {
+  if (!searchMaBV.value) return maBVList.value
+  return maBVList.value.filter(item => 
+    item.toLowerCase().includes(searchMaBV.value.toLowerCase())
   )
+})
+
+// Filter dashboard data by Mã PO and/or Mã BV
+const filteredDashboardData = computed(() => {
+  let result = dashboardData.value
+  
+  if (filterMaPO.value) {
+    result = result.filter(item => item.ma_po && item.ma_po.includes(filterMaPO.value))
+  }
+  
+  if (filterMaBV.value) {
+    result = result.filter(item => item.ma_bv === filterMaBV.value)
+  }
+  
+  return result
 })
 
 // Group data by Mã PO and add summary rows
@@ -264,15 +320,23 @@ const loadData = async () => {
   }
 }
 
-const selectFirstMatch = () => {
+const selectFirstMatchPO = () => {
   if (filteredMaPOList.value.length > 0) {
     filterMaPO.value = filteredMaPOList.value[0].ma_po
+  }
+}
+
+const selectFirstMatchBV = () => {
+  if (filteredMaBVList.value.length > 0) {
+    filterMaBV.value = filteredMaBVList.value[0]
   }
 }
 
 const clearFilters = () => {
   filterMaPO.value = ''
   searchMaPO.value = ''
+  filterMaBV.value = ''
+  searchMaBV.value = ''
 }
 
 const exportToExcel = () => {
