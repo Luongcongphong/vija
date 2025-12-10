@@ -2,13 +2,17 @@ import api from './api';
 
 export interface QLDM {
   id?: number;
-  ma_bv: string;
-  so_bg?: string;
   ma_kh?: string;
-  so_luong: number;
+  so_bg?: string;
+  ngay_bg?: string;
+  ma_bv: string;
+  nguyen_lieu?: string;
+  xlbm?: string;
   dvt?: string;
+  so_luong: number;
   don_gia: number;
   don_vi_tien_te?: string;
+  ghi_chu?: string;
   created_at?: string;
   updated_at?: string;
 }

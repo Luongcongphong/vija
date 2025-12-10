@@ -71,25 +71,29 @@
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
+        <table class="w-full text-sm text-left border-collapse">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-4 py-3">Mã BV</th>
-              <th class="px-4 py-3">Số BG</th>
-              <th class="px-4 py-3">Mã KH</th>
-              <th class="px-4 py-3">Số lượng</th>
-              <th class="px-4 py-3">ĐVT</th>
-              <th class="px-4 py-3">Đơn giá</th>
-              <th class="px-4 py-3">ĐV Tiền tệ</th>
-              <th class="px-4 py-3">Thao tác</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã KH</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Số BG</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Ngày BG</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Mã BV</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Nguyên Liệu</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">XLBM</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Đơn Vị</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Số lượng</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Đơn giá</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">ĐV Tiền tệ</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Ghi Chú</th>
+              <th class="px-4 py-3 border border-gray-300 dark:border-gray-600">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="8" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="12" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="filteredData.length === 0">
-              <td colspan="8" class="px-4 py-8 text-center text-gray-500">{{ searchMaBV ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
+              <td colspan="12" class="px-4 py-8 text-center text-gray-500">{{ searchMaBV ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
             </tr>
             <tr
               v-else
@@ -97,14 +101,18 @@
               :key="item.id"
               class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              <td class="px-4 py-3 font-medium">{{ item.ma_bv }}</td>
-              <td class="px-4 py-3">{{ item.so_bg || '-' }}</td>
-              <td class="px-4 py-3">{{ item.ma_kh || '-' }}</td>
-              <td class="px-4 py-3">{{ item.so_luong }}</td>
-              <td class="px-4 py-3">{{ item.dvt || 'p' }}</td>
-              <td class="px-4 py-3">{{ formatCurrency(item.don_gia) }}</td>
-              <td class="px-4 py-3">{{ item.don_vi_tien_te || 'VND' }}</td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.so_bg || '-' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_bg) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600 font-medium">{{ item.ma_bv }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.nguyen_lieu || '-' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.xlbm || '-' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.so_luong }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ formatCurrency(item.don_gia) }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.don_vi_tien_te || 'VND' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">{{ item.ghi_chu || '-' }}</td>
+              <td class="px-4 py-3 border border-gray-300 dark:border-gray-600">
                 <button
                   @click="editItem(item)"
                   class="text-blue-600 hover:text-blue-800 mr-3"
@@ -136,81 +144,122 @@
           {{ editId !== null ? 'Sửa định mức' : 'Thêm định mức mới' }}
         </h2>
         <form @submit.prevent="saveItem">
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Mã BV</label>
-            <input
-              v-model="formData.ma_bv"
-              type="text"
-              required
-              placeholder="VD: BV001"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
+          <div class="grid grid-cols-2 gap-4">
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Mã KH</label>
+              <input
+                v-model="formData.ma_kh"
+                type="text"
+                placeholder="VD: KH001 (Tùy chọn)"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Số BG</label>
+              <input
+                v-model="formData.so_bg"
+                type="text"
+                placeholder="VD: BG001 (Tùy chọn)"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Ngày BG</label>
+              <input
+                v-model="formData.ngay_bg"
+                type="date"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Mã BV</label>
+              <input
+                v-model="formData.ma_bv"
+                type="text"
+                required
+                placeholder="VD: BV001"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Nguyên Liệu</label>
+              <input
+                v-model="formData.nguyen_lieu"
+                type="text"
+                placeholder="VD: Thép không gỉ"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">XLBM</label>
+              <input
+                v-model="formData.xlbm"
+                type="text"
+                placeholder="VD: Mạ kẽm"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Đơn Vị</label>
+              <select
+                v-model="formData.dvt"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="p">p</option>
+                <option value="cặp">cặp</option>
+                <option value="bộ">bộ</option>
+                <option value="kg">kg</option>
+                <option value="m">m</option>
+                <option value="m2">m²</option>
+                <option value="m3">m³</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Số lượng</label>
+              <input
+                v-model.number="formData.so_luong"
+                type="number"
+                required
+                min="1"
+                placeholder="VD: 100"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+              <p class="text-xs text-gray-500 mt-1">Số lượng định mức</p>
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Đơn giá</label>
+              <input
+                v-model.number="formData.don_gia"
+                type="number"
+                required
+                min="0"
+                placeholder="VD: 50000"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">ĐV Tiền tệ</label>
+              <select
+                v-model="formData.don_vi_tien_te"
+                class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="VND">VND</option>
+                <option value="AUD">AUD</option>
+                <option value="SGD">SGD</option>
+                <option value="JPY">JPY</option>
+                <option value="CNY">CNY</option>
+                <option value="KRW">KRW</option>
+              </select>
+            </div>
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Số BG</label>
-            <input
-              v-model="formData.so_bg"
-              type="text"
-              placeholder="VD: BG001 (Tùy chọn)"
+            <label class="block text-sm font-medium mb-2">Ghi Chú</label>
+            <textarea
+              v-model="formData.ghi_chu"
+              rows="3"
+              placeholder="Ghi chú thêm..."
               class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Mã KH</label>
-            <input
-              v-model="formData.ma_kh"
-              type="text"
-              placeholder="VD: KH001 (Tùy chọn)"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Số lượng</label>
-            <input
-              v-model.number="formData.so_luong"
-              type="number"
-              required
-              min="1"
-              placeholder="VD: 100"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
-            <p class="text-xs text-gray-500 mt-1">Số lượng định mức (áp dụng cho SL ≤ giá trị này)</p>
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">ĐVT (Đơn vị tính)</label>
-            <select
-              v-model="formData.dvt"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            >
-              <option value="p">p</option>
-              <option value="cặp">cặp</option>
-              <option value="bộ">bộ</option>
-            </select>
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">Đơn giá</label>
-            <input
-              v-model.number="formData.don_gia"
-              type="number"
-              required
-              min="0"
-              placeholder="VD: 50000"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
-          </div>
-          <div class="mb-4">
-            <label class="block text-sm font-medium mb-2">ĐV Tiền tệ</label>
-            <select
-              v-model="formData.don_vi_tien_te"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            >
-              <option value="VND">VND</option>
-              <option value="AUD">AUD</option>
-              <option value="SGD">SGD</option>
-              <option value="JPY">JPY</option>
-              <option value="CNY">CNY</option>
-              <option value="KRW">KRW</option>
-            </select>
+            ></textarea>
           </div>
           <div class="flex justify-end gap-2">
             <button
@@ -247,13 +296,17 @@ const showAddModal = ref(false)
 const editId = ref<number | null>(null)
 const loading = ref(false)
 const formData = ref({
-  ma_bv: '',
-  so_bg: '',
   ma_kh: '',
-  so_luong: 0,
+  so_bg: '',
+  ngay_bg: '',
+  ma_bv: '',
+  nguyen_lieu: '',
+  xlbm: '',
   dvt: 'p',
+  so_luong: 0,
   don_gia: 0,
   don_vi_tien_te: 'VND',
+  ghi_chu: '',
 })
 
 
@@ -285,6 +338,11 @@ const clearFilter = () => {
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
+}
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('vi-VN')
 }
 
 const loadData = async () => {
@@ -332,13 +390,17 @@ const saveItem = async () => {
 const editItem = (item: QLDM) => {
   editId.value = item.id || null
   formData.value = {
-    ma_bv: item.ma_bv,
-    so_bg: item.so_bg || '',
     ma_kh: item.ma_kh || '',
-    so_luong: item.so_luong,
+    so_bg: item.so_bg || '',
+    ngay_bg: item.ngay_bg || '',
+    ma_bv: item.ma_bv,
+    nguyen_lieu: item.nguyen_lieu || '',
+    xlbm: item.xlbm || '',
     dvt: item.dvt || 'p',
+    so_luong: item.so_luong,
     don_gia: item.don_gia,
     don_vi_tien_te: item.don_vi_tien_te || 'VND',
+    ghi_chu: item.ghi_chu || '',
   }
   showAddModal.value = true
 }
@@ -362,13 +424,17 @@ const closeModal = () => {
   showAddModal.value = false
   editId.value = null
   formData.value = {
-    ma_bv: '',
-    so_bg: '',
     ma_kh: '',
-    so_luong: 0,
+    so_bg: '',
+    ngay_bg: '',
+    ma_bv: '',
+    nguyen_lieu: '',
+    xlbm: '',
     dvt: 'p',
+    so_luong: 0,
     don_gia: 0,
     don_vi_tien_te: 'VND',
+    ghi_chu: '',
   }
 }
 
