@@ -493,6 +493,15 @@ const tongPhi = computed(() => {
 
 // Load QLPO
 const loadQLPO = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading QLPO')
+    return
+  }
+  
   try {
     const response = await qlpoService.getAll()
     qlpoData.value = response.data
@@ -502,6 +511,15 @@ const loadQLPO = async () => {
 }
 
 const loadMaPOList = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading PO list')
+    return
+  }
+  
   try {
     const response = await qlpoService.getAllMaPO()
     maPOList.value = response.data

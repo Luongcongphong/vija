@@ -262,7 +262,8 @@ const router = useRouter();
 const handleLogout = () => {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
-  router.push('/login')
+  localStorage.removeItem('isAuthenticated')
+  router.push('/signin')
 }
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();

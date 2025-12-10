@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout>
+  <AdminLayout v-if="isAuthenticated">
     <div class="mb-6 flex justify-between items-center">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Quản lý PO</h1>
       <div class="flex gap-2">
@@ -187,9 +187,9 @@
     <!-- Modal thêm/sửa -->
     <div
       v-if="showAddModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-99999"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-99999 p-4"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">
           {{ editId !== null ? 'Sửa PO' : (selectedMaPO ? `Thêm Mã BV vào ${selectedMaPO}` : 'Thêm PO mới') }}
         </h2>
@@ -239,19 +239,43 @@
           </div>
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Ngày tạo</label>
-            <input
-              v-model="formData.ngay_tao"
-              type="date"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
+            <div class="relative">
+              <input
+                v-model="formData.ngay_tao"
+                type="date"
+                :max="new Date().toISOString().split('T')[0]"
+                class="w-full px-3 py-2 pr-10 border rounded-lg dark:bg-gray-700 dark:border-gray-600 cursor-pointer date-input"
+                style="color-scheme: light dark;"
+                @click="openDatePicker"
+                @focus="openDatePicker"
+              />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Chọn ngày tạo PO</p>
           </div>
           <div class="mb-4">
             <label class="block text-sm font-medium mb-2">Ngày giao</label>
-            <input
-              v-model="formData.ngay_giao"
-              type="date"
-              class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
+            <div class="relative">
+              <input
+                v-model="formData.ngay_giao"
+                type="date"
+                :min="formData.ngay_tao || undefined"
+                class="w-full px-3 py-2 pr-10 border rounded-lg dark:bg-gray-700 dark:border-gray-600 cursor-pointer date-input"
+                style="color-scheme: light dark;"
+                @click="openDatePicker"
+                @focus="openDatePicker"
+              />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Chọn ngày giao (phải sau ngày tạo)</p>
           </div>
           <div class="flex justify-end gap-2">
             <button
@@ -272,6 +296,12 @@
       </div>
     </div>
   </AdminLayout>
+  <div v-else class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p class="text-gray-600">Đang chuyển hướng...</p>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -293,6 +323,13 @@ const showAddModal = ref(false)
 const selectedMaPO = ref('')
 const editId = ref<number | null>(null)
 const loading = ref(false)
+
+// Computed property để kiểm tra authentication
+const isAuthenticated = computed(() => {
+  const authStatus = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  return authStatus && hasToken
+})
 const formData = ref({
   ma_po: '',
   ma_bv: '',
@@ -392,7 +429,30 @@ const formatDate = (dateString?: string) => {
   return new Date(dateString).toLocaleDateString('vi-VN')
 }
 
+const openDatePicker = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (input && input.showPicker) {
+    try {
+      input.showPicker()
+    } catch (error) {
+      // Fallback for browsers that don't support showPicker
+      input.focus()
+    }
+  } else {
+    input.focus()
+  }
+}
+
 const loadData = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading data')
+    return
+  }
+  
   try {
     loading.value = true
     const response = await qlpoService.getAll()
@@ -406,6 +466,15 @@ const loadData = async () => {
 }
 
 const loadMaBVList = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading BV list')
+    return
+  }
+  
   try {
     const response = await qldmService.getAll()
     maBVList.value = response.data.map(item => ({
@@ -585,6 +654,15 @@ const exportToExcel = () => {
 }
 
 const loadMaPOList = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading PO list')
+    return
+  }
+  
   try {
     const response = await qlpoService.getAllMaPO()
     maPOList.value = response.data
@@ -801,3 +879,60 @@ onMounted(() => {
   loadMaBVList()
 })
 </script>
+
+<style scoped>
+/* Force date picker to show */
+.date-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  position: relative;
+}
+
+/* Show native date picker icon */
+.date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 1;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  color: #6b7280;
+}
+
+.date-input::-webkit-calendar-picker-indicator:hover {
+  color: #374151;
+}
+
+/* Dark mode */
+.dark .date-input::-webkit-calendar-picker-indicator {
+  color: #9ca3af;
+}
+
+.dark .date-input::-webkit-calendar-picker-indicator:hover {
+  color: #d1d5db;
+}
+
+/* Firefox date picker */
+.date-input::-moz-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+}
+
+/* Ensure date input works on all browsers */
+.date-input[type="date"] {
+  min-height: 42px;
+  line-height: 1.5;
+}
+
+/* Force show calendar icon */
+.date-input::-webkit-inner-spin-button,
+.date-input::-webkit-clear-button {
+  display: none;
+}
+</style>

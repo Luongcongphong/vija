@@ -79,13 +79,15 @@ router.beforeEach((to, from, next) => {
   // Debug log
   console.log('Router navigation:', { to: to.path, from: from.path })
   
+  // Kiểm tra authentication ngay từ đầu
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  const isAuthValid = isAuthenticated && hasToken
+
   // Cập nhật title
   if (to.meta.title) {
     document.title = `${to.meta.title} | Hệ thống quản lý`
   }
-
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
-  const hasToken = !!localStorage.getItem('token')
 
   // Tránh redirect loop
   if (to.path === from.path) {
@@ -96,7 +98,7 @@ router.beforeEach((to, from, next) => {
 
   // Xử lý trang signin
   if (to.path === '/signin') {
-    if (isAuthenticated && hasToken) {
+    if (isAuthValid) {
       console.log('Already authenticated, redirect to home')
       next('/')
       return
@@ -106,11 +108,12 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // Xử lý các trang yêu cầu authentication
+  // Xử lý các trang yêu cầu authentication - KIỂM TRA TRƯỚC KHI LOAD COMPONENT
   if (to.meta.requiresAuth) {
-    if (!isAuthenticated || !hasToken) {
-      console.log('Not authenticated, redirect to signin')
-      next('/signin')
+    if (!isAuthValid) {
+      console.log('Not authenticated, redirect to signin immediately')
+      // Sử dụng replace thay vì push để không tạo history entry
+      next({ path: '/signin', replace: true })
       return
     }
     console.log('Authenticated, proceed')
@@ -120,6 +123,23 @@ router.beforeEach((to, from, next) => {
 
   // Các trang khác
   console.log('Other page, proceed')
+  next()
+})
+
+// Guard bổ sung để đảm bảo không load component khi chưa auth
+router.beforeResolve((to, from, next) => {
+  // Chỉ kiểm tra cho các trang yêu cầu auth
+  if (to.meta.requiresAuth) {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+    const hasToken = !!localStorage.getItem('token')
+    
+    if (!isAuthenticated || !hasToken) {
+      console.log('BeforeResolve: Not authenticated, block component loading')
+      next('/signin')
+      return
+    }
+  }
+  
   next()
 })
 

@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout>
+  <AdminLayout v-if="isAuthenticated">
     <div class="mb-6 flex justify-between items-center">
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
       <button
@@ -148,10 +148,17 @@
       </div>
     </div>
   </AdminLayout>
+  <div v-else class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p class="text-gray-600">Đang chuyển hướng...</p>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watchEffect } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { dashboardService } from '@/services/dashboardService'
 import { qlpoService } from '@/services/qlpoService'
@@ -179,6 +186,7 @@ interface DashboardItem {
   ngay_tao: string
 }
 
+const router = useRouter()
 const dashboardData = ref<DashboardItem[]>([])
 const maPOList = ref<{ ma_po: string }[]>([])
 const filterMaPO = ref('')
@@ -186,6 +194,21 @@ const searchMaPO = ref('')
 const filterMaBV = ref('')
 const searchMaBV = ref('')
 const loading = ref(false)
+
+// Computed property để kiểm tra authentication
+const isAuthenticated = computed(() => {
+  const authStatus = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  return authStatus && hasToken
+})
+
+// Theo dõi authentication status và redirect nếu cần
+watchEffect(() => {
+  if (!isAuthenticated.value) {
+    console.log('Authentication lost, redirecting to signin')
+    router.replace('/signin')
+  }
+})
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
@@ -298,6 +321,15 @@ const groupedDashboardData = computed(() => {
 })
 
 const loadMaPOList = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading PO list')
+    return
+  }
+  
   try {
     const response = await qlpoService.getAllMaPO()
     maPOList.value = response.data
@@ -307,6 +339,15 @@ const loadMaPOList = async () => {
 }
 
 const loadData = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading data')
+    return
+  }
+  
   try {
     loading.value = true
     const response = await dashboardService.getData()

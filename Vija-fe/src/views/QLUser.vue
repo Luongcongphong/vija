@@ -155,6 +155,15 @@ const formatDate = (dateString?: string) => {
 }
 
 const loadData = async () => {
+  // Kiểm tra authentication trước khi gọi API
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const hasToken = !!localStorage.getItem('token')
+  
+  if (!isAuthenticated || !hasToken) {
+    console.log('Not authenticated, skip loading data')
+    return
+  }
+  
   try {
     loading.value = true
     const result = await userService.getAll()
