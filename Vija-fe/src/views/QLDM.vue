@@ -38,35 +38,68 @@
 
     <!-- Filter with Search -->
     <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <label class="block text-sm font-medium mb-2">Lọc theo Mã BV:</label>
-      <div class="flex gap-2">
-        <input
-          v-model="searchMaBV"
-          type="text"
-          placeholder="Tìm kiếm Mã BV..."
-          @keyup.enter="selectFirstMatch"
-          class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        />
-        <select
-          v-model="filterMaBV"
-          class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        >
-          <option value="">Tất cả</option>
-          <option v-for="item in filteredMaBVList" :key="item.ma_bv" :value="item.ma_bv">
-            {{ item.ma_bv }}
-          </option>
-        </select>
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Lọc theo Mã KH -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã KH:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaKH"
+              type="text"
+              placeholder="Tìm kiếm Mã KH..."
+              @keyup.enter="selectFirstMatchKH"
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaKH"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaKHList" :key="item" :value="item">
+                {{ item }}
+              </option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Lọc theo Mã BV -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Lọc theo Mã BV:</label>
+          <div class="flex gap-2">
+            <input
+              v-model="searchMaBV"
+              type="text"
+              placeholder="Tìm kiếm Mã BV..."
+              @keyup.enter="selectFirstMatchBV"
+              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            />
+            <select
+              v-model="filterMaBV"
+              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+            >
+              <option value="">Tất cả</option>
+              <option v-for="item in filteredMaBVList" :key="item.ma_bv" :value="item.ma_bv">
+                {{ item.ma_bv }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-2 mt-2">
         <button
-          v-if="filterMaBV"
+          v-if="filterMaKH || filterMaBV"
           @click="clearFilter"
           class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
         >
-          Xóa lọc
+          Xóa tất cả lọc
         </button>
+        <p v-if="filterMaKH || filterMaBV" class="text-xs text-green-600 flex items-center">
+          Đang hiển thị: {{ filteredData.length }} kết quả
+          <span v-if="filterMaKH"> cho KH: {{ filterMaKH }}</span>
+          <span v-if="filterMaBV"> cho BV: {{ filterMaBV }}</span>
+        </p>
       </div>
-      <p v-if="filterMaBV" class="text-xs text-green-600 mt-2">
-        Đang hiển thị: {{ filteredData.length }} kết quả cho {{ filterMaBV }}
-      </p>
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -93,7 +126,7 @@
               <td colspan="12" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="filteredData.length === 0">
-              <td colspan="12" class="px-4 py-8 text-center text-gray-500">{{ searchMaBV ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
+              <td colspan="12" class="px-4 py-8 text-center text-gray-500">{{ (searchMaKH || searchMaBV) ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
             </tr>
             <tr
               v-else
@@ -308,6 +341,8 @@ import * as XLSX from 'xlsx'
 
 const data = ref<QLDM[]>([])
 const maBVList = ref<{ ma_bv: string }[]>([])
+const searchMaKH = ref('')
+const filterMaKH = ref('')
 const searchMaBV = ref('')
 const filterMaBV = ref('')
 const showAddModal = ref(false)
@@ -336,6 +371,19 @@ const formData = ref({
 
 
 
+// Filter Mã KH list by search
+const maKHList = computed(() => {
+  const uniqueKH = [...new Set(data.value.map(item => item.ma_kh).filter(kh => kh))]
+  return uniqueKH.sort()
+})
+
+const filteredMaKHList = computed(() => {
+  if (!searchMaKH.value) return maKHList.value
+  return maKHList.value.filter(item => 
+    item.toLowerCase().includes(searchMaKH.value.toLowerCase())
+  )
+})
+
 // Filter Mã BV list by search
 const filteredMaBVList = computed(() => {
   if (!searchMaBV.value) return maBVList.value
@@ -344,19 +392,47 @@ const filteredMaBVList = computed(() => {
   )
 })
 
-// Filter data by selected Mã BV
+// Filter data by selected Mã KH and/or Mã BV, then sort by Mã KH
 const filteredData = computed(() => {
-  if (!filterMaBV.value) return data.value
-  return data.value.filter(item => item.ma_bv === filterMaBV.value)
+  let result = data.value
+  
+  if (filterMaKH.value) {
+    result = result.filter(item => item.ma_kh === filterMaKH.value)
+  }
+  
+  if (filterMaBV.value) {
+    result = result.filter(item => item.ma_bv === filterMaBV.value)
+  }
+  
+  // Sắp xếp theo Mã KH, sau đó theo Mã BV
+  return result.sort((a, b) => {
+    const khA = a.ma_kh || ''
+    const khB = b.ma_kh || ''
+    
+    if (khA !== khB) {
+      return khA.localeCompare(khB)
+    }
+    
+    // Nếu Mã KH giống nhau, sắp xếp theo Mã BV
+    return a.ma_bv.localeCompare(b.ma_bv)
+  })
 })
 
-const selectFirstMatch = () => {
+const selectFirstMatchKH = () => {
+  if (filteredMaKHList.value.length > 0) {
+    filterMaKH.value = filteredMaKHList.value[0]
+  }
+}
+
+const selectFirstMatchBV = () => {
   if (filteredMaBVList.value.length > 0) {
     filterMaBV.value = filteredMaBVList.value[0].ma_bv
   }
 }
 
 const clearFilter = () => {
+  filterMaKH.value = ''
+  searchMaKH.value = ''
   filterMaBV.value = ''
   searchMaBV.value = ''
 }

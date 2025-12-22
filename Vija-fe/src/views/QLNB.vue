@@ -26,7 +26,14 @@
           📊 Export Excel {{ filterMaPO ? '(Đã lọc)' : '' }}
         </button>
         <button
-          @click="showAddModal = true"
+          @click="refreshData"
+          class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+          :disabled="loading"
+        >
+          🔄 Refresh PO
+        </button>
+        <button
+          @click="openAddModal"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Thêm mới
@@ -130,14 +137,25 @@
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
               <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
-                <td class="px-3 py-1.5 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
+                <td class="px-3 py-1.5 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.totalRows">
                   {{ group.ma_po }}
                 </td>
                 <td class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600" colspan="2">
-                  SLBV: {{ group.items.length }}
+                  SLBV: {{ group.items.length }}/{{ group.totalBVCount }}
+                  <span v-if="group.missingBVs.length > 0" class="text-orange-600 font-medium">
+                    ({{ group.missingBVs.length }} thiếu)
+                  </span>
                 </td>
-                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="9"></td>
-                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600">
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="8"></td>
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600 flex gap-1">
+                  <button
+                    v-if="group.missingBVs.length > 0"
+                    @click="addMissingBVs(group.ma_po, group.missingBVs)"
+                    class="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                    :disabled="loading"
+                  >
+                    ➕ Thêm {{ group.missingBVs.length }}
+                  </button>
                   <button
                     @click="deletePO(group.ma_po)"
                     class="text-red-600 hover:text-red-800 text-xs font-medium"
@@ -147,7 +165,7 @@
                   </button>
                 </td>
               </tr>
-              <!-- Chi tiết từng Mã BV -->
+              <!-- Chi tiết từng Mã BV có dữ liệu -->
               <tr
                 v-for="item in group.items"
                 :key="item.id"
@@ -178,6 +196,37 @@
                     :disabled="loading"
                   >
                     Xóa
+                  </button>
+                </td>
+              </tr>
+              
+              <!-- Hiển thị các Mã BV còn thiếu -->
+              <tr
+                v-for="missingBV in group.missingBVs"
+                :key="`missing-${group.ma_po}-${missingBV.ma_bv}`"
+                class="border-b dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20"
+              >
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-orange-600 font-medium">
+                  {{ missingBV.ma_bv }}
+                  <span class="text-xs text-orange-500 ml-1">(chưa có chi phí)</span>
+                </td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.ma_kh || '-' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.so_luong || 0 }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.dvt || 'p' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">0</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
+                  <button
+                    @click="addSingleBV(group.ma_po, missingBV)"
+                    class="text-green-600 hover:text-green-800 text-sm"
+                    :disabled="loading"
+                  >
+                    ➕ Thêm
                   </button>
                 </td>
               </tr>
@@ -214,6 +263,13 @@
             />
           </div>
           
+          <!-- Thông báo dữ liệu đã cập nhật -->
+          <div v-if="!editId" class="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
+            <p class="text-sm text-blue-700 dark:text-blue-300">
+              ✅ Dữ liệu PO đã được cập nhật từ QLPO mới nhất
+            </p>
+          </div>
+
           <!-- Nút tạo tự động -->
           <div v-if="formData.ma_po && !editId" class="mb-4">
             <div class="flex gap-2">
@@ -419,10 +475,11 @@ const filteredData = computed(() => {
   return result
 })
 
-// Gộp dữ liệu theo Mã PO
+// Gộp dữ liệu theo Mã PO và tính toán Mã BV còn thiếu
 const groupedData = computed(() => {
   const groups: { [key: string]: QLNB[] } = {}
   
+  // Nhóm dữ liệu QLNB theo Mã PO
   filteredData.value.forEach(item => {
     if (!groups[item.ma_po]) {
       groups[item.ma_po] = []
@@ -430,10 +487,32 @@ const groupedData = computed(() => {
     groups[item.ma_po].push(item)
   })
   
-  return Object.keys(groups).map(ma_po => ({
-    ma_po,
-    items: groups[ma_po]
-  })).sort((a, b) => b.ma_po.localeCompare(a.ma_po))
+  // Lấy tất cả Mã PO từ QLPO (bao gồm cả PO không có trong QLNB)
+  const allPOs = [...new Set([
+    ...Object.keys(groups),
+    ...qlpoData.value.map(item => item.ma_po)
+  ])]
+  
+  return allPOs.map(ma_po => {
+    const items = groups[ma_po] || []
+    
+    // Lấy tất cả Mã BV từ QLPO cho PO này
+    const allBVsInPO = qlpoData.value.filter(item => item.ma_po === ma_po)
+    
+    // Tìm các Mã BV còn thiếu (có trong QLPO nhưng chưa có trong QLNB)
+    const existingBVs = items.map(item => item.ma_bv)
+    const missingBVs = allBVsInPO.filter(bv => !existingBVs.includes(bv.ma_bv))
+    
+    return {
+      ma_po,
+      items,
+      missingBVs,
+      totalBVCount: allBVsInPO.length,
+      totalRows: items.length + missingBVs.length + 1 // +1 for header row
+    }
+  })
+  .filter(group => group.items.length > 0 || group.missingBVs.length > 0) // Chỉ hiển thị PO có dữ liệu
+  .sort((a, b) => b.ma_po.localeCompare(a.ma_po))
 })
 
 const selectFirstMatchPO = () => {
@@ -540,24 +619,46 @@ const autoCreateFromPO = async () => {
     return
   }
   
-  const confirmMsg = `Tạo tự động ${maBVOptions.value.length} dòng chi phí cho PO "${formData.value.ma_po}"?\n\n` +
-    `Các Mã BV: ${maBVOptions.value.map(opt => opt.value).join(', ')}\n\n` +
-    `Tất cả chi phí sẽ được đặt = 0, bạn có thể sửa sau.`
-  
-  if (!confirm(confirmMsg)) return
-  
   try {
     loading.value = true
     
+    // Refresh dữ liệu QLPO trước khi tạo
+    console.log('Refreshing QLPO data before auto-create...')
+    await loadQLPO()
+    
+    // Lấy lại danh sách Mã BV sau khi refresh
+    const poItems = qlpoData.value.filter(item => item.ma_po === formData.value.ma_po)
+    
+    if (poItems.length === 0) {
+      alert(`Không tìm thấy Mã BV nào cho PO "${formData.value.ma_po}"!\n\nVui lòng kiểm tra lại QLPO.`)
+      return
+    }
+    
+    const confirmMsg = `Tạo tự động ${poItems.length} dòng chi phí cho PO "${formData.value.ma_po}"?\n\n` +
+      `Các Mã BV: ${poItems.map(item => item.ma_bv).join(', ')}\n\n` +
+      `Tất cả chi phí sẽ được đặt = 0, bạn có thể sửa sau.`
+    
+    if (!confirm(confirmMsg)) return
+    
     let successCount = 0
     let failCount = 0
+    let skipCount = 0
     const failedItems: string[] = []
-    
-    // Lấy thông tin từ QLPO
-    const poItems = qlpoData.value.filter(item => item.ma_po === formData.value.ma_po)
+    const skippedItems: string[] = []
     
     for (const poItem of poItems) {
       try {
+        // Kiểm tra xem đã tồn tại chưa
+        const existing = data.value.find(item => 
+          item.ma_po === formData.value.ma_po && item.ma_bv === poItem.ma_bv
+        )
+        
+        if (existing) {
+          skipCount++
+          skippedItems.push(poItem.ma_bv)
+          continue
+        }
+        
         await qlnbService.create({
           ma_po: formData.value.ma_po,
           ma_bv: poItem.ma_bv,
@@ -581,6 +682,9 @@ const autoCreateFromPO = async () => {
     
     let resultMsg = `Tạo tự động hoàn tất!\n\n`
     resultMsg += `✅ Thành công: ${successCount} dòng\n`
+    if (skipCount > 0) {
+      resultMsg += `⚠️ Đã tồn tại: ${skipCount} dòng (${skippedItems.join(', ')})\n`
+    }
     if (failCount > 0) {
       resultMsg += `❌ Thất bại: ${failCount} dòng\n`
       resultMsg += `Mã BV lỗi: ${failedItems.join(', ')}`
@@ -618,6 +722,108 @@ const loadData = async () => {
     // Hiển thị lỗi chi tiết
     const errorMsg = error.response?.data?.message || error.message || 'Không thể tải dữ liệu'
     alert(`Lỗi: ${errorMsg}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Hàm refresh tất cả dữ liệu
+const refreshData = async () => {
+  try {
+    loading.value = true
+    console.log('Refreshing all data...')
+    
+    // Load lại dữ liệu từ QLPO trước
+    await loadQLPO()
+    await loadMaPOList()
+    
+    // Sau đó load lại QLNB
+    await loadData()
+    
+    alert('✅ Đã cập nhật dữ liệu từ QLPO!')
+  } catch (error) {
+    console.error('Lỗi khi refresh:', error)
+    alert('Không thể refresh dữ liệu!')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Thêm một Mã BV còn thiếu
+const addSingleBV = async (ma_po: string, missingBV: any) => {
+  try {
+    loading.value = true
+    
+    await qlnbService.create({
+      ma_po,
+      ma_bv: missingBV.ma_bv,
+      so_luong: missingBV.so_luong || 0,
+      phoi_lieu: 0,
+      gia_cong_ngoai: 0,
+      gia_cong_noi_bo: 0,
+      xu_ly_be_mat: 0,
+      van_chuyen: 0,
+      phi_qldn: 0
+    })
+    
+    await loadData()
+    alert(`✅ Đã thêm Mã BV "${missingBV.ma_bv}" vào PO "${ma_po}"`)
+  } catch (error) {
+    console.error('Lỗi khi thêm Mã BV:', error)
+    alert('Không thể thêm Mã BV!')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Thêm tất cả Mã BV còn thiếu cho một PO
+const addMissingBVs = async (ma_po: string, missingBVs: any[]) => {
+  const confirmMsg = `Thêm ${missingBVs.length} Mã BV còn thiếu cho PO "${ma_po}"?\n\n` +
+    `Các Mã BV: ${missingBVs.map(bv => bv.ma_bv).join(', ')}\n\n` +
+    `Tất cả chi phí sẽ được đặt = 0, bạn có thể sửa sau.`
+  
+  if (!confirm(confirmMsg)) return
+  
+  try {
+    loading.value = true
+    
+    let successCount = 0
+    let failCount = 0
+    const failedItems: string[] = []
+    
+    for (const missingBV of missingBVs) {
+      try {
+        await qlnbService.create({
+          ma_po,
+          ma_bv: missingBV.ma_bv,
+          so_luong: missingBV.so_luong || 0,
+          phoi_lieu: 0,
+          gia_cong_ngoai: 0,
+          gia_cong_noi_bo: 0,
+          xu_ly_be_mat: 0,
+          van_chuyen: 0,
+          phi_qldn: 0
+        })
+        successCount++
+      } catch (error) {
+        failCount++
+        failedItems.push(missingBV.ma_bv)
+      }
+    }
+    
+    await loadData()
+    
+    let resultMsg = `Thêm Mã BV hoàn tất!\n\n`
+    resultMsg += `✅ Thành công: ${successCount} Mã BV\n`
+    if (failCount > 0) {
+      resultMsg += `❌ Thất bại: ${failCount} Mã BV\n`
+      resultMsg += `Mã BV lỗi: ${failedItems.join(', ')}`
+    }
+    
+    alert(resultMsg)
+  } catch (error) {
+    console.error('Lỗi khi thêm Mã BV:', error)
+    alert('Không thể thêm Mã BV!')
   } finally {
     loading.value = false
   }
@@ -717,6 +923,24 @@ const deletePO = async (ma_po: string) => {
     } finally {
       loading.value = false
     }
+  }
+}
+
+const openAddModal = async () => {
+  try {
+    loading.value = true
+    
+    // Refresh dữ liệu QLPO trước khi mở modal
+    console.log('Refreshing QLPO data before opening modal...')
+    await loadQLPO()
+    await loadMaPOList()
+    
+    showAddModal.value = true
+  } catch (error) {
+    console.error('Lỗi khi refresh dữ liệu:', error)
+    alert('Không thể tải dữ liệu mới nhất từ QLPO!')
+  } finally {
+    loading.value = false
   }
 }
 
