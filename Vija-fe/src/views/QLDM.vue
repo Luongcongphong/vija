@@ -380,7 +380,7 @@ const maKHList = computed(() => {
 const filteredMaKHList = computed(() => {
   if (!searchMaKH.value) return maKHList.value
   return maKHList.value.filter(item => 
-    item.toLowerCase().includes(searchMaKH.value.toLowerCase())
+    item && item.toLowerCase().includes(searchMaKH.value.toLowerCase())
   )
 })
 
@@ -419,7 +419,7 @@ const filteredData = computed(() => {
 })
 
 const selectFirstMatchKH = () => {
-  if (filteredMaKHList.value.length > 0) {
+  if (filteredMaKHList.value.length > 0 && filteredMaKHList.value[0]) {
     filterMaKH.value = filteredMaKHList.value[0]
   }
 }

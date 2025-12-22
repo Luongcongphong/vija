@@ -210,9 +210,9 @@
                   {{ missingBV.ma_bv }}
                   <span class="text-xs text-orange-500 ml-1">(chưa có chi phí)</span>
                 </td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.ma_kh || '-' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.so_luong || 0 }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.dvt || 'p' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
