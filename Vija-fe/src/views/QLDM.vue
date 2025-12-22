@@ -46,7 +46,7 @@
             <input
               v-model="searchMaKH"
               type="text"
-              placeholder="Tìm kiếm Mã KH..."
+              placeholder="Gõ để tìm tất cả KH chứa từ khóa..."
               @keyup.enter="selectFirstMatchKH"
               class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
@@ -69,7 +69,7 @@
             <input
               v-model="searchMaBV"
               type="text"
-              placeholder="Tìm kiếm Mã BV..."
+              placeholder="Gõ để tìm tất cả BV chứa từ khóa..."
               @keyup.enter="selectFirstMatchBV"
               class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
@@ -88,15 +88,17 @@
       
       <div class="flex gap-2 mt-2">
         <button
-          v-if="filterMaKH || filterMaBV"
+          v-if="filterMaKH || filterMaBV || searchMaKH || searchMaBV"
           @click="clearFilter"
           class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
         >
           Xóa tất cả lọc
         </button>
-        <p v-if="filterMaKH || filterMaBV" class="text-xs text-green-600 flex items-center">
+        <p v-if="filterMaKH || filterMaBV || searchMaKH || searchMaBV" class="text-xs text-green-600 flex items-center">
           Đang hiển thị: {{ filteredData.length }} kết quả
+          <span v-if="searchMaKH"> tìm KH: "{{ searchMaKH }}"</span>
           <span v-if="filterMaKH"> cho KH: {{ filterMaKH }}</span>
+          <span v-if="searchMaBV"> tìm BV: "{{ searchMaBV }}"</span>
           <span v-if="filterMaBV"> cho BV: {{ filterMaBV }}</span>
         </p>
       </div>
@@ -126,7 +128,7 @@
               <td colspan="12" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="filteredData.length === 0">
-              <td colspan="12" class="px-4 py-8 text-center text-gray-500">{{ (searchMaKH || searchMaBV) ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
+              <td colspan="12" class="px-4 py-8 text-center text-gray-500">{{ (searchMaKH || searchMaBV || filterMaKH || filterMaBV) ? 'Không tìm thấy kết quả' : 'Chưa có dữ liệu' }}</td>
             </tr>
             <tr
               v-else
@@ -392,14 +394,30 @@ const filteredMaBVList = computed(() => {
   )
 })
 
-// Filter data by selected Mã KH and/or Mã BV, then sort by Mã KH
+// Filter data by search text and selected values, then sort by Mã KH
 const filteredData = computed(() => {
   let result = data.value
   
+  // Filter theo search text Mã KH (khi user gõ vào input)
+  if (searchMaKH.value) {
+    result = result.filter(item => 
+      item.ma_kh && item.ma_kh.toLowerCase().includes(searchMaKH.value.toLowerCase())
+    )
+  }
+  
+  // Filter theo search text Mã BV (khi user gõ vào input)
+  if (searchMaBV.value) {
+    result = result.filter(item => 
+      item.ma_bv.toLowerCase().includes(searchMaBV.value.toLowerCase())
+    )
+  }
+  
+  // Filter theo selected value Mã KH (khi user chọn từ dropdown)
   if (filterMaKH.value) {
     result = result.filter(item => item.ma_kh === filterMaKH.value)
   }
   
+  // Filter theo selected value Mã BV (khi user chọn từ dropdown)
   if (filterMaBV.value) {
     result = result.filter(item => item.ma_bv === filterMaBV.value)
   }
