@@ -21,7 +21,7 @@
             <input
               v-model="searchMaPO"
               type="text"
-              placeholder="Tìm kiếm Mã PO..."
+              placeholder="Gõ để tìm tất cả PO chứa từ khóa..."
               @keyup.enter="selectFirstMatchPO"
               class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
@@ -44,7 +44,7 @@
             <input
               v-model="searchMaBV"
               type="text"
-              placeholder="Tìm kiếm Mã BV..."
+              placeholder="Gõ để tìm tất cả BV chứa từ khóa..."
               @keyup.enter="selectFirstMatchBV"
               class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
             />
@@ -63,15 +63,17 @@
       
       <div class="flex gap-2 mt-2">
         <button
-          v-if="filterMaPO || filterMaBV"
+          v-if="filterMaPO || filterMaBV || searchMaPO || searchMaBV"
           @click="clearFilters"
           class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
         >
           Xóa tất cả lọc
         </button>
-        <p v-if="filterMaPO || filterMaBV" class="text-xs text-green-600 flex items-center">
+        <p v-if="filterMaPO || filterMaBV || searchMaPO || searchMaBV" class="text-xs text-green-600 flex items-center">
           Đang hiển thị: {{ groupedDashboardData.length }} dòng
+          <span v-if="searchMaPO"> tìm PO: "{{ searchMaPO }}"</span>
           <span v-if="filterMaPO"> cho PO: {{ filterMaPO }}</span>
+          <span v-if="searchMaBV"> tìm BV: "{{ searchMaBV }}"</span>
           <span v-if="filterMaBV"> cho BV: {{ filterMaBV }}</span>
         </p>
       </div>
@@ -237,13 +239,30 @@ const filteredMaBVList = computed(() => {
 })
 
 // Filter dashboard data by Mã PO and/or Mã BV
+// Filter dashboard data by search text and selected values
 const filteredDashboardData = computed(() => {
   let result = dashboardData.value
   
+  // Filter theo search text Mã PO (khi user gõ vào input)
+  if (searchMaPO.value) {
+    result = result.filter(item => 
+      item.ma_po && item.ma_po.toLowerCase().includes(searchMaPO.value.toLowerCase())
+    )
+  }
+  
+  // Filter theo search text Mã BV (khi user gõ vào input)
+  if (searchMaBV.value) {
+    result = result.filter(item => 
+      item.ma_bv && item.ma_bv.toLowerCase().includes(searchMaBV.value.toLowerCase())
+    )
+  }
+  
+  // Filter theo selected value Mã PO (khi user chọn từ dropdown)
   if (filterMaPO.value) {
     result = result.filter(item => item.ma_po && item.ma_po.includes(filterMaPO.value))
   }
   
+  // Filter theo selected value Mã BV (khi user chọn từ dropdown)
   if (filterMaBV.value) {
     result = result.filter(item => item.ma_bv === filterMaBV.value)
   }
