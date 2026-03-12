@@ -68,78 +68,45 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
-    {
-      path: '/:pathMatch(.*)*',
-      redirect: '/',
-    },
   ],
 })
 
 router.beforeEach((to, from, next) => {
-  // Debug log
-  console.log('Router navigation:', { to: to.path, from: from.path })
-  
-  // Kiểm tra authentication ngay từ đầu
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  // Kiểm tra authentication
   const hasToken = !!localStorage.getItem('token')
-  const isAuthValid = isAuthenticated && hasToken
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
+  const isAuthValid = hasToken && isAuthenticated
 
   // Cập nhật title
   if (to.meta.title) {
     document.title = `${to.meta.title} | Hệ thống quản lý`
   }
 
-  // Tránh redirect loop
-  if (to.path === from.path) {
-    console.log('Same path, skip')
-    next()
-    return
-  }
-
   // Xử lý trang signin
   if (to.path === '/signin') {
+    // Nếu đã đăng nhập, redirect về home
     if (isAuthValid) {
-      console.log('Already authenticated, redirect to home')
-      next('/')
-      return
+      next({ path: '/', replace: true })
+    } else {
+      // Chưa đăng nhập, cho vào signin
+      next()
     }
-    console.log('Go to signin')
-    next()
     return
   }
 
-  // Xử lý các trang yêu cầu authentication - KIỂM TRA TRƯỚC KHI LOAD COMPONENT
+  // Xử lý các trang yêu cầu authentication
   if (to.meta.requiresAuth) {
     if (!isAuthValid) {
-      console.log('Not authenticated, redirect to signin immediately')
-      // Sử dụng replace thay vì push để không tạo history entry
+      // Chưa đăng nhập, redirect về signin
       next({ path: '/signin', replace: true })
-      return
+    } else {
+      // Đã đăng nhập, cho phép truy cập
+      next()
     }
-    console.log('Authenticated, proceed')
-    next()
     return
   }
 
-  // Các trang khác
-  console.log('Other page, proceed')
-  next()
-})
-
-// Guard bổ sung để đảm bảo không load component khi chưa auth
-router.beforeResolve((to, from, next) => {
-  // Chỉ kiểm tra cho các trang yêu cầu auth
-  if (to.meta.requiresAuth) {
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
-    const hasToken = !!localStorage.getItem('token')
-    
-    if (!isAuthenticated || !hasToken) {
-      console.log('BeforeResolve: Not authenticated, block component loading')
-      next('/signin')
-      return
-    }
-  }
-  
+  // Các trang khác không yêu cầu auth
   next()
 })
 

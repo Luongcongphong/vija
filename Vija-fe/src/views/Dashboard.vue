@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watchEffect } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { dashboardService } from '@/services/dashboardService'
@@ -204,13 +204,14 @@ const isAuthenticated = computed(() => {
   return authStatus && hasToken
 })
 
-// Theo dõi authentication status và redirect nếu cần
-watchEffect(() => {
-  if (!isAuthenticated.value) {
-    console.log('Authentication lost, redirecting to signin')
-    router.replace('/signin')
-  }
-})
+// DISABLED: Router guard đã xử lý authentication redirect
+// watchEffect này gây ra redirect loop
+// watchEffect(() => {
+//   if (!isAuthenticated.value) {
+//     console.log('Authentication lost, redirecting to signin')
+//     router.replace('/signin')
+//   }
+// })
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)

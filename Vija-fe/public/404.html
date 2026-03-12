@@ -3,32 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecting...</title>
-  <script>
-    // GitHub Pages SPA redirect
-    // This script takes the current URL and converts the path and query
-    // string into just a query string, and then redirects the browser
-    // to that URL with new query string + hash, and no path.
-    //
-    // For example:
-    // /foo/bar/baz?abc=123#def
-    // becomes:
-    // /?p=/foo/bar/baz&q=abc%3D123#def
-    //
-    // Note: any hash in the original URL is preserved in the hash.
-    var pathSegmentsToKeep = 1;
-    
-    var l = window.location;
-    l.replace(
-      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
-  </script>
+  <title>404 - Không tìm thấy trang</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f3f4f6;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h1 { color: #ef4444; margin: 0 0 10px; }
+    p { color: #6b7280; margin: 0 0 20px; }
+    a {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    a:hover { background: #2563eb; }
+  </style>
 </head>
 <body>
-  <p>Redirecting...</p>
+  <div class="container">
+    <h1>404</h1>
+    <p>Không tìm thấy trang</p>
+    <a href="/">Về trang chủ</a>
+  </div>
 </body>
 </html>

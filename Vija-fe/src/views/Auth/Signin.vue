@@ -237,9 +237,11 @@ const handleSubmit = async () => {
       password: password.value,
     })
 
-    // Đăng nhập thành công
-    localStorage.setItem('isAuthenticated', 'true')
+    // authService.login đã set tất cả các flag cần thiết
+    // Chỉ cần set currentUser nếu cần
     localStorage.setItem('currentUser', username.value)
+    
+    // Redirect về trang chủ
     router.push('/')
   } catch (error: any) {
     console.error('Login error:', error)

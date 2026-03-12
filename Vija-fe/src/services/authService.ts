@@ -22,8 +22,10 @@ export const authService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
     const response = await api.post('/auth/login', data);
     if (response.data.token) {
+      // Set tất cả các flag cần thiết ngay lập tức
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('isAuthenticated', 'true');
     }
     return response.data;
   },
@@ -34,12 +36,17 @@ export const authService = {
   },
 
   logout() {
+    // Clear tất cả các flag
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('currentUser');
   },
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    const hasToken = !!localStorage.getItem('token');
+    const isAuthFlag = localStorage.getItem('isAuthenticated') === 'true';
+    return hasToken && isAuthFlag;
   },
 
   getCurrentUser() {

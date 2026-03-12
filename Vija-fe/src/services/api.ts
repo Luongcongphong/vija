@@ -28,13 +28,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Chỉ redirect nếu không phải trang login
-      if (!window.location.pathname.includes('/signin')) {
+      const currentPath = window.location.pathname
+      
+      // Chỉ xử lý nếu không phải đang ở trang login
+      if (!currentPath.includes('/signin')) {
+        // Clear tất cả auth data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('isAuthenticated');
         localStorage.removeItem('currentUser');
-        window.location.href = '/signin';
+        
+        // Redirect về signin - sử dụng replace để không tạo history
+        window.location.replace('/signin');
       }
     }
     return Promise.reject(error);

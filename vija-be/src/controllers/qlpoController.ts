@@ -67,7 +67,7 @@ export const getAllMaPO = async (req: AuthRequest, res: Response) => {
 // Tạo PO mới
 export const createQLPO = async (req: AuthRequest, res: Response) => {
   try {
-    let { ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao } = req.body;
+    let { ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao, so_bg } = req.body;
 
     // Validation
     if (!ma_po || !ma_bv) {
@@ -102,8 +102,8 @@ export const createQLPO = async (req: AuthRequest, res: Response) => {
     const soLuong = Number(so_luong) || 0;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlpo (ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?, ?, ?)',
-      [ma_po, ma_bv, ma_kh || null, soLuong, formattedNgayTao, formattedNgayGiao]
+      'INSERT INTO qlpo (ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao, so_bg) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [ma_po, ma_bv, ma_kh || null, soLuong, formattedNgayTao, formattedNgayGiao, so_bg || '']
     );
 
     res.status(201).json({
