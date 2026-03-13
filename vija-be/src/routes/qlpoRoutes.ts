@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { getAllQLPO, getQLPOById, getQLPOByMaPO, getAllMaPO, createQLPO, updateQLPO, deleteQLPO, deleteQLPOByMaPO } from '../controllers/qlpoController';
+import { 
+  getAllQLPO, getQLPOById, getQLPOByMaPO, getAllMaPO, 
+  createQLPO, updateQLPO, deleteQLPO, deleteQLPOByMaPO,
+  getDeliveriesByQLPOId, createDelivery, deleteDelivery 
+} from '../controllers/qlpoController';
 import { authMiddleware, requireKyThuat } from '../middleware/auth';
 
 const router = Router();
@@ -15,5 +19,10 @@ router.post('/', createQLPO);
 router.put('/:id', updateQLPO);
 router.delete('/by-ma-po/:ma_po', deleteQLPOByMaPO);
 router.delete('/:id', deleteQLPO);
+
+// PO Deliveries
+router.get('/:id/deliveries', getDeliveriesByQLPOId);
+router.post('/:id/deliveries', createDelivery);
+router.delete('/deliveries/:delivery_id', deleteDelivery);
 
 export default router;

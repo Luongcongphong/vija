@@ -112,6 +112,8 @@
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã KH</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">SL</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">ĐVT</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Đã giao</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Còn lại</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày tạo</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày giao</th>
               <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Thao tác</th>
@@ -133,7 +135,7 @@
                 <td class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600" colspan="2">
                   SLBV: {{ group.items.length }}
                 </td>
-                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="3"></td>
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="5"></td>
                 <td class="px-1 py-1 border border-gray-300 dark:border-gray-600 flex gap-2">
                   <button
                     @click="openAddModal(group.ma_po, group.ngay_tao, group.ngay_giao)"
@@ -159,21 +161,32 @@
               >
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.so_luong || 0 }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 font-bold">{{ item.so_luong || 0 }}</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-green-600">{{ Number(item.sl_da_giao || 0) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-red-600 font-bold">
+                  {{ Number(item.so_luong || 0) - Number(item.sl_da_giao || 0) }}
+                </td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_tao) }}</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_giao) }}</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   <button
+                    @click="openDeliveryModal(item)"
+                    class="text-green-600 hover:text-green-800 mr-3 whitespace-nowrap"
+                    :disabled="loading"
+                  >
+                    Chi tiết
+                  </button>
+                  <button
                     @click="editItem(item)"
-                    class="text-blue-600 hover:text-blue-800 mr-3"
+                    class="text-blue-600 hover:text-blue-800 mr-3 whitespace-nowrap"
                     :disabled="loading"
                   >
                     Sửa
                   </button>
                   <button
                     @click="deleteItem(item.id!)"
-                    class="text-red-600 hover:text-red-800"
+                    class="text-red-600 hover:text-red-800 whitespace-nowrap"
                     :disabled="loading"
                   >
                     Xóa
@@ -297,6 +310,115 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal Chi tiết giao hàng -->
+    <div
+      v-if="showDeliveryModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000] p-4"
+    >
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">Chi tiết giao hàng</h2>
+          <button @click="closeDeliveryModal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <!-- Thông tin PO -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+          <div><p class="text-xs text-gray-500">Mã PO</p><p class="font-medium">{{ currentDeliveryPO?.ma_po }}</p></div>
+          <div><p class="text-xs text-gray-500">Mã BV</p><p class="font-medium">{{ currentDeliveryPO?.ma_bv }}</p></div>
+          <div><p class="text-xs text-gray-500">Mã KH</p><p class="font-medium">{{ currentDeliveryPO?.ma_kh || '-' }}</p></div>
+          <div><p class="text-xs text-gray-500">Tổng SL / ĐVT</p><p class="font-bold text-blue-600">{{ currentDeliveryPO?.so_luong }} {{ currentDeliveryPO?.dvt }}</p></div>
+          <div><p class="text-xs text-gray-500">Đã giao</p><p class="font-bold text-green-600">{{ Number(currentDeliveryPO?.sl_da_giao || 0) }}</p></div>
+          <div><p class="text-xs text-gray-500">Còn lại</p><p class="font-bold text-red-600">{{ Number(currentDeliveryPO?.so_luong || 0) - Number(currentDeliveryPO?.sl_da_giao || 0) }}</p></div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-6">
+          <!-- Form Thêm Lần giao -->
+          <div class="w-full md:w-1/3 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg self-start sticky top-0">
+            <h3 class="font-bold mb-3 text-sm uppercase">Thêm lần giao mới</h3>
+            <form @submit.prevent="saveDelivery">
+              <div class="mb-3">
+                <label class="block text-sm mb-1">Số lượng giao</label>
+                <input
+                  v-model.number="deliveryForm.so_luong_giao"
+                  type="number"
+                  required
+                  min="1"
+                  :max="Number(currentDeliveryPO?.so_luong || 0) - Number(currentDeliveryPO?.sl_da_giao || 0)"
+                  placeholder="SL"
+                  class="w-full px-3 py-2 border rounded-lg dark:bg-gray-600 dark:border-gray-500"
+                />
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm mb-1">Ngày giao</label>
+                 <div class="relative">
+                  <input
+                    v-model="deliveryForm.ngay_giao"
+                    type="date"
+                    required
+                    class="w-full px-3 py-2 pr-10 border rounded-lg dark:bg-gray-600 dark:border-gray-500 cursor-pointer date-input"
+                    style="color-scheme: light dark;"
+                    @click="openDatePicker"
+                    @focus="openDatePicker"
+                  />
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
+                :disabled="deliveryLoading || (Number(currentDeliveryPO?.so_luong || 0) - Number(currentDeliveryPO?.sl_da_giao || 0)) <= 0"
+              >
+                <span v-if="deliveryLoading" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                Thêm lần giao
+              </button>
+            </form>
+          </div>
+
+          <!-- Danh sách các lần giao -->
+          <div class="w-full md:w-2/3">
+            <h3 class="font-bold mb-3 text-sm uppercase">Lịch sử giao hàng</h3>
+            <table class="w-full text-sm text-left border-collapse">
+              <thead class="bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                <tr>
+                  <th class="px-3 py-2 border border-gray-300 dark:border-gray-500">Lần giao</th>
+                  <th class="px-3 py-2 border border-gray-300 dark:border-gray-500">Số lượng</th>
+                  <th class="px-3 py-2 border border-gray-300 dark:border-gray-500">Ngày giao</th>
+                  <th class="px-3 py-2 border border-gray-300 dark:border-gray-500 w-20">Xóa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="deliveryList.length === 0">
+                  <td colspan="4" class="px-3 py-6 text-center text-gray-500">Chưa có dữ liệu giao hàng</td>
+                </tr>
+                <tr v-for="del in deliveryList" :key="del.id" class="border-b dark:border-gray-600">
+                  <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 font-medium">Lần {{ del.lan_giao }}</td>
+                  <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 font-bold text-green-600">{{ del.so_luong_giao }}</td>
+                  <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(del.ngay_giao) }}</td>
+                  <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">
+                    <button @click="deleteDelivery(del.id!)" class="text-red-500 hover:text-red-700" :disabled="deliveryLoading">
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button @click="closeDeliveryModal" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+            Đóng bảng
+          </button>
+        </div>
+      </div>
+    </div>
   </AdminLayout>
   <div v-else class="flex items-center justify-center min-h-screen">
     <div class="text-center">
@@ -310,7 +432,7 @@
 import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import SearchableSelect from '@/components/common/SearchableSelect.vue'
-import { qlpoService, type QLPO } from '@/services/qlpoService'
+import { qlpoService, type QLPO, type QLPODelivery } from '@/services/qlpoService'
 import { qldmService } from '@/services/qldmService'
 import * as XLSX from 'xlsx'
 
@@ -325,6 +447,13 @@ const showAddModal = ref(false)
 const selectedMaPO = ref('')
 const editId = ref<number | null>(null)
 const loading = ref(false)
+
+// Delivery Modal State
+const showDeliveryModal = ref(false)
+const currentDeliveryPO = ref<QLPO | null>(null)
+const deliveryList = ref<QLPODelivery[]>([])
+const deliveryLoading = ref(false)
+const deliveryForm = ref({ so_luong_giao: 0, ngay_giao: '' })
 
 // Computed property để kiểm tra authentication
 const isAuthenticated = computed(() => {
@@ -617,6 +746,95 @@ const closeModal = () => {
     so_luong: 0,
     ngay_tao: '',
     ngay_giao: '',
+  }
+}
+
+// =======================
+// DELIVERY MODAL LOGIC
+// =======================
+const openDeliveryModal = async (item: QLPO) => {
+  currentDeliveryPO.value = item
+  deliveryForm.value = { 
+    so_luong_giao: 0, 
+    ngay_giao: new Date().toISOString().split('T')[0] 
+  }
+  showDeliveryModal.value = true
+  await loadDeliveries(item.id!)
+}
+
+const closeDeliveryModal = () => {
+  showDeliveryModal.value = false
+  currentDeliveryPO.value = null
+  deliveryList.value = []
+  // Reload data to update 'sl_da_giao' and 'Còn lại' across the grid
+  loadData()
+}
+
+const loadDeliveries = async (qlpo_id: number) => {
+  try {
+    deliveryLoading.value = true
+    const res = await qlpoService.getDeliveries(qlpo_id)
+    deliveryList.value = res.data
+  } catch (err) {
+    console.error(err)
+    alert("Lỗi khi tải danh sách giao hàng")
+  } finally {
+    deliveryLoading.value = false
+  }
+}
+
+const saveDelivery = async () => {
+  if (!currentDeliveryPO.value?.id) return
+  if (deliveryForm.value.so_luong_giao <= 0) {
+    alert("Số lượng giao phải lớn hơn 0")
+    return
+  }
+
+  const conLai = Number(currentDeliveryPO.value.so_luong || 0) - Number(currentDeliveryPO.value.sl_da_giao || 0)
+  if (Number(deliveryForm.value.so_luong_giao) > conLai) {
+    alert("Số lượng giao không được vượt quá số lượng còn lại")
+    return
+  }
+
+  try {
+    deliveryLoading.value = true
+    await qlpoService.addDelivery(currentDeliveryPO.value.id, {
+      so_luong_giao: Number(deliveryForm.value.so_luong_giao),
+      ngay_giao: deliveryForm.value.ngay_giao
+    })
+    
+    // Update local sl_da_giao without reloading whole grid right away to keep modal smooth
+    currentDeliveryPO.value.sl_da_giao = Number(currentDeliveryPO.value.sl_da_giao || 0) + Number(deliveryForm.value.so_luong_giao)
+    
+    deliveryForm.value.so_luong_giao = 0
+    await loadDeliveries(currentDeliveryPO.value.id)
+  } catch (err) {
+    console.error(err)
+    alert("Lỗi khi thêm giao hàng")
+  } finally {
+    deliveryLoading.value = false
+  }
+}
+
+const deleteDelivery = async (delivery_id: number) => {
+  if (!confirm("Bạn có chắc chắn muốn xóa lần giao hàng này?")) return
+  if (!currentDeliveryPO.value?.id) return
+
+  try {
+    // Find delivery to adjust local sl_da_giao
+    const del = deliveryList.value.find(d => d.id === delivery_id)
+    const soLuongXoa = Number(del?.so_luong_giao || 0)
+
+    deliveryLoading.value = true
+    await qlpoService.deleteDelivery(delivery_id)
+    
+    currentDeliveryPO.value.sl_da_giao = Number(currentDeliveryPO.value.sl_da_giao || 0) - soLuongXoa
+    await loadDeliveries(currentDeliveryPO.value.id)
+  } catch (err) {
+    console.error(err)
+    alert("Lỗi khi xóa giao hàng")
+  } finally {
+    deliveryLoading.value = false
   }
 }
 

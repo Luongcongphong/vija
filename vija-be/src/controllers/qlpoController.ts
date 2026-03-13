@@ -8,7 +8,8 @@ export const getAllQLPO = async (req: AuthRequest, res: Response) => {
     const [rows] = await pool.query(`
       SELECT 
         po.*,
-        (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt
+        (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt,
+        (SELECT COALESCE(SUM(so_luong_giao), 0) FROM qlpo_delivery WHERE qlpo_id = po.id) as sl_da_giao
       FROM qlpo po
       ORDER BY po.created_at DESC
     `);
@@ -24,7 +25,8 @@ export const getQLPOById = async (req: AuthRequest, res: Response) => {
     const [rows]: any = await pool.query(`
       SELECT 
         po.*,
-        (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt
+        (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt,
+        (SELECT COALESCE(SUM(so_luong_giao), 0) FROM qlpo_delivery WHERE qlpo_id = po.id) as sl_da_giao
       FROM qlpo po
       WHERE po.id = ?
     `, [req.params.id]);
@@ -288,5 +290,63 @@ export const deleteQLPOByMaPO = async (req: AuthRequest, res: Response) => {
       message: 'Lỗi server', 
       error: error.message 
     });
+  }
+};
+
+// ==========================================
+// PO DELIVERIES APIs
+// ==========================================
+
+export const getDeliveriesByQLPOId = async (req: AuthRequest, res: Response) => {
+  try {
+    const qlpo_id = req.params.id;
+    const [rows] = await pool.query(
+      'SELECT * FROM qlpo_delivery WHERE qlpo_id = ? ORDER BY lan_giao ASC',
+      [qlpo_id]
+    );
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi server', error });
+  }
+};
+
+export const createDelivery = async (req: AuthRequest, res: Response) => {
+  try {
+    const qlpo_id = req.params.id;
+    const { so_luong_giao, ngay_giao } = req.body;
+
+    if (!so_luong_giao || !ngay_giao) {
+      return res.status(400).json({ message: 'Số lượng giao và Ngày giao là bắt buộc' });
+    }
+
+    // Auto calculate lan_giao
+    const [existingRows]: any = await pool.query(
+      'SELECT COALESCE(MAX(lan_giao), 0) + 1 as next_lan FROM qlpo_delivery WHERE qlpo_id = ?',
+      [qlpo_id]
+    );
+    const lan_giao = existingRows[0].next_lan;
+
+    const [result]: any = await pool.query(
+      'INSERT INTO qlpo_delivery (qlpo_id, lan_giao, so_luong_giao, ngay_giao) VALUES (?, ?, ?, ?)',
+      [qlpo_id, lan_giao, so_luong_giao, ngay_giao]
+    );
+
+    res.status(201).json({
+      message: 'Thêm lần giao thành công',
+      id: result.insertId,
+      lan_giao
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+};
+
+export const deleteDelivery = async (req: AuthRequest, res: Response) => {
+  try {
+    const delivery_id = req.params.delivery_id;
+    await pool.query('DELETE FROM qlpo_delivery WHERE id = ?', [delivery_id]);
+    res.json({ message: 'Xóa lần giao thành công' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 };
