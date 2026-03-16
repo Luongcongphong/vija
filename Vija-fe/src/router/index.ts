@@ -60,6 +60,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/qlhl',
+      name: 'QLHL',
+      component: () => import('../views/QLHL.vue'),
+      meta: {
+        title: 'Quản lý Hàng Lỗi',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/qluser',
       name: 'QLUser',
       component: () => import('../views/QLUser.vue'),

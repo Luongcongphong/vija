@@ -293,6 +293,11 @@ const menuGroups = [
         path: "/qlpo",
       },
       {
+        icon: DocsIcon,
+        name: "QL Hàng Lỗi",
+        path: "/qlhl",
+      },
+      {
         icon: TableIcon,
         name: "QLNB",
         path: "/qlnb",

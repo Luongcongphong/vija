@@ -7,6 +7,7 @@ import qlbgRoutes from './routes/qlbgRoutes';
 import qlnbRoutes from './routes/qlnbRoutes';
 import qldmRoutes from './routes/qldmRoutes';
 import qlpoRoutes from './routes/qlpoRoutes';
+import qlhlRoutes from './routes/qlhlRoutes';
 import userRoutes from './routes/userRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import { initDatabase } from './utils/initDatabase';
@@ -25,6 +26,7 @@ app.use('/api/qlbg', qlbgRoutes);
 app.use('/api/qlnb', qlnbRoutes);
 app.use('/api/qldm', qldmRoutes);
 app.use('/api/qlpo', qlpoRoutes);
+app.use('/api/qlhl', qlhlRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
