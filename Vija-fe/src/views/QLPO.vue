@@ -35,69 +35,129 @@
     </div>
 
     <!-- Filter with Search -->
-    <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <div class="grid grid-cols-2 gap-4">
+    <div class="mb-4 bg-white dark:bg-gray-800 rounded-lg shadow p-3 text-sm">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <!-- Lọc theo Mã PO -->
-        <div>
-          <label class="block text-sm font-medium mb-2">Lọc theo Mã PO:</label>
-          <div class="flex gap-2">
-            <input
-              v-model="searchMaPO"
-              type="text"
-              placeholder="Gõ để tìm tất cả PO chứa từ khóa..."
-              @keyup.enter="selectFirstMatchPO"
-              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            />
-            <select
-              v-model="filterMaPO"
-              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            >
-              <option value="">Tất cả</option>
-              <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
-                {{ item.ma_po }}
-              </option>
-            </select>
-          </div>
+        <div class="flex items-center gap-2">
+          <label class="font-medium min-w-[70px]">Mã PO:</label>
+          <input
+            v-model="searchMaPO"
+            type="text"
+            placeholder="Tìm theo PO..."
+            @keyup.enter="selectFirstMatchPO"
+            class="flex-1 px-2 py-1.5 border rounded dark:bg-gray-700 dark:border-gray-600"
+          />
+          <select
+            v-model="filterMaPO"
+            class="w-32 px-2 py-1.5 border rounded dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="">Tất cả</option>
+            <option v-for="item in filteredMaPOList" :key="item.ma_po" :value="item.ma_po">
+              {{ item.ma_po }}
+            </option>
+          </select>
         </div>
         
         <!-- Lọc theo Mã BV -->
-        <div>
-          <label class="block text-sm font-medium mb-2">Lọc theo Mã BV:</label>
-          <div class="flex gap-2">
+        <div class="flex items-center gap-2">
+          <label class="font-medium min-w-[70px]">Mã BV:</label>
+          <input
+            v-model="searchMaBV"
+            type="text"
+            placeholder="Tìm theo BV..."
+            @keyup.enter="selectFirstMatchBV"
+            class="flex-1 px-2 py-1.5 border rounded dark:bg-gray-700 dark:border-gray-600"
+          />
+          <select
+            v-model="filterMaBV"
+            class="w-32 px-2 py-1.5 border rounded dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="">Tất cả</option>
+            <option v-for="item in filteredMaBVList" :key="item" :value="item">
+              {{ item }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Lọc bổ sung: Trạng thái, Loại ngày, Từ ngày, Đến ngày -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+        <!-- Lọc trạng thái -->
+        <div class="flex items-center gap-2">
+          <label class="font-medium min-w-[70px]">Trạng thái:</label>
+          <select
+            v-model="filterStatus"
+            class="flex-1 px-2 py-1.5 border rounded dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="">Tất cả</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="incomplete">Chưa xong</option>
+          </select>
+        </div>
+        
+        <!-- Loại ngày -->
+        <div class="flex items-center gap-2">
+          <label class="font-medium min-w-[70px]">Loại ngày:</label>
+          <select
+            v-model="filterDateType"
+            class="flex-1 px-2 py-1.5 border rounded dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="ngay_hoan_thanh">Hoàn thành</option>
+            <option value="ngay_tao">Tạo PO</option>
+            <option value="ngay_giao">Giao PO</option>
+          </select>
+        </div>
+
+        <!-- Từ ngày -->
+        <div class="flex items-center gap-2">
+          <label class="font-medium min-w-[70px]">Từ ngày:</label>
+          <div class="relative flex-1">
             <input
-              v-model="searchMaBV"
-              type="text"
-              placeholder="Gõ để tìm tất cả BV chứa từ khóa..."
-              @keyup.enter="selectFirstMatchBV"
-              class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+              v-model="filterFromDate"
+              type="date"
+              class="w-full px-2 py-1.5 pr-8 border rounded dark:bg-gray-700 dark:border-gray-600 cursor-pointer date-input"
+              style="color-scheme: light dark;"
+              @click="openDatePicker"
+              @focus="openDatePicker"
             />
-            <select
-              v-model="filterMaBV"
-              class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-            >
-              <option value="">Tất cả</option>
-              <option v-for="item in filteredMaBVList" :key="item" :value="item">
-                {{ item }}
-              </option>
-            </select>
+          </div>
+        </div>
+        
+        <!-- Đến ngày -->
+        <div class="flex items-center gap-2">
+          <label class="font-medium min-w-[70px]">Đến ngày:</label>
+          <div class="relative flex-1">
+            <input
+              v-model="filterToDate"
+              type="date"
+              class="w-full px-2 py-1.5 pr-8 border rounded dark:bg-gray-700 dark:border-gray-600 cursor-pointer date-input"
+              style="color-scheme: light dark;"
+              @click="openDatePicker"
+              @focus="openDatePicker"
+            />
           </div>
         </div>
       </div>
       
-      <div class="flex gap-2 mt-2">
+      <div class="flex gap-2 mt-3 items-center">
         <button
-          v-if="filterMaPO || filterMaBV || searchMaPO || searchMaBV"
+          v-if="filterMaPO || filterMaBV || searchMaPO || searchMaBV || filterStatus || filterFromDate || filterToDate"
           @click="clearFilter"
-          class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+          class="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 whitespace-nowrap"
         >
-          Xóa tất cả lọc
+          Xóa lọc
         </button>
-        <p v-if="filterMaPO || filterMaBV || searchMaPO || searchMaBV" class="text-xs text-green-600 flex items-center">
-          Đang hiển thị: {{ filteredData.length }} kết quả
-          <span v-if="searchMaPO"> tìm PO: "{{ searchMaPO }}"</span>
-          <span v-if="filterMaPO"> cho PO: {{ filterMaPO }}</span>
-          <span v-if="searchMaBV"> tìm BV: "{{ searchMaBV }}"</span>
-          <span v-if="filterMaBV"> cho BV: {{ filterMaBV }}</span>
+        <p v-if="filterMaPO || filterMaBV || searchMaPO || searchMaBV || filterStatus || filterFromDate || filterToDate" class="text-xs text-green-600 flex flex-wrap items-center gap-1">
+          <span>Đang hiển thị: {{ filteredData.length }} KQ.</span>
+          <span v-if="searchMaPO">Tìm PO: "{{ searchMaPO }}"</span>
+          <span v-if="filterMaPO">Cho PO: {{ filterMaPO }}</span>
+          <span v-if="searchMaBV">Tìm BV: "{{ searchMaBV }}"</span>
+          <span v-if="filterMaBV">Cho BV: {{ filterMaBV }}</span>
+          <span v-if="filterStatus === 'completed'" class="font-bold"> (Hoàn thành)</span>
+          <span v-if="filterStatus === 'incomplete'" class="font-bold text-orange-500"> (Chưa xong)</span>
+          <span v-if="filterFromDate || filterToDate" class="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">
+            (Hạn: {{ filterFromDate ? formatDate(filterFromDate) : '...' }} - {{ filterToDate ? formatDate(filterToDate) : '...' }})
+          </span>
         </p>
       </div>
     </div>
@@ -107,36 +167,37 @@
         <table class="w-full text-sm text-left border-collapse">
           <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <tr>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã PO</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã BV</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Mã KH</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">SL</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">ĐVT</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Đã giao</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Còn lại</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày tạo</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Ngày giao</th>
-              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600">Thao tác</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">Mã PO</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">Mã BV</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">Mã KH</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-right">SL</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">ĐVT</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-right">Đã giao</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-right">Còn lại</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">Ngày tạo</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">Ngày giao</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">Ngày hoàn thành</th>
+              <th class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center w-48">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="loading">
-              <td colspan="8" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
+              <td colspan="11" class="px-4 py-8 text-center text-gray-500">Đang tải...</td>
             </tr>
             <tr v-else-if="groupedData.length === 0">
-              <td colspan="8" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
+              <td colspan="11" class="px-4 py-8 text-center text-gray-500">Chưa có dữ liệu</td>
             </tr>
             <template v-else v-for="group in groupedData" :key="group.ma_po">
               <!-- Header row cho mỗi Mã PO -->
               <tr class="bg-green-50 dark:bg-green-900 border-b-2 border-green-200 dark:border-green-700">
-                <td class="px-3 py-1.5 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600" :rowspan="group.items.length + 1">
+                <td class="px-3 py-1.5 font-bold text-green-700 dark:text-green-300 border border-gray-300 dark:border-gray-600 text-center align-middle" :rowspan="group.items.length + 1">
                   {{ group.ma_po }}
                 </td>
                 <td class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600" colspan="2">
                   SLBV: {{ group.items.length }}
                 </td>
-                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="5"></td>
-                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600 flex gap-2">
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="6"></td>
+                <td class="px-1 py-1 border border-gray-300 dark:border-gray-600 flex gap-2 justify-center items-center" colspan="2">
                   <button
                     @click="openAddModal(group.ma_po, group.ngay_tao, group.ngay_giao)"
                     class="text-green-600 hover:text-green-800 text-xs"
@@ -159,17 +220,30 @@
                 :key="item.id"
                 class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_bv }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.ma_kh || '-' }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 font-bold">{{ item.so_luong || 0 }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ item.dvt || 'p' }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-green-600">{{ Number(item.sl_da_giao || 0) }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-red-600 font-bold">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">{{ item.ma_bv }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">{{ item.ma_kh || '-' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-right font-bold">{{ item.so_luong || 0 }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">{{ item.dvt || 'p' }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-right text-green-600">{{ Number(item.sl_da_giao || 0) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-right text-red-600 font-bold">
                   {{ Number(item.so_luong || 0) - Number(item.sl_da_giao || 0) }}
                 </td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_tao) }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_giao) }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">{{ formatDate(item.ngay_tao) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">{{ formatDate(item.ngay_giao) }}</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center font-bold text-green-600">
+                  <span v-if="(Number(item.so_luong || 0) - Number(item.sl_da_giao || 0)) <= 0">
+                    {{ formatDate(item.ngay_hoan_thanh) }}
+                  </span>
+                  <span v-else class="text-gray-400 font-normal">-</span>
+                </td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 flex flex-wrap gap-2 justify-center items-center">
+                  <span
+                    v-if="(Number(item.so_luong || 0) - Number(item.sl_da_giao || 0)) <= 0"
+                    class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded mr-3 whitespace-nowrap inline-flex items-center shadow-sm"
+                  >
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    Hoàn thành
+                  </span>
                   <button
                     @click="openDeliveryModal(item)"
                     class="text-green-600 hover:text-green-800 mr-3 whitespace-nowrap"
@@ -443,6 +517,10 @@ const filterMaPO = ref('')
 const searchMaPO = ref('')
 const filterMaBV = ref('')
 const searchMaBV = ref('')
+const filterStatus = ref('')
+const filterDateType = ref('ngay_hoan_thanh')
+const filterFromDate = ref('')
+const filterToDate = ref('')
 const showAddModal = ref(false)
 const selectedMaPO = ref('')
 const editId = ref<number | null>(null)
@@ -521,6 +599,36 @@ const filteredData = computed(() => {
     result = result.filter(item => item.ma_bv === filterMaBV.value)
   }
   
+  // Filter theo trạng thái hoàn thành
+  if (filterStatus.value === 'completed') {
+    result = result.filter(item => (Number(item.so_luong || 0) - Number(item.sl_da_giao || 0)) <= 0)
+  } else if (filterStatus.value === 'incomplete') {
+    result = result.filter(item => (Number(item.so_luong || 0) - Number(item.sl_da_giao || 0)) > 0)
+  }
+
+  // Filter theo khoảng thời gian
+  if (filterFromDate.value || filterToDate.value) {
+    const fromTime = filterFromDate.value ? new Date(filterFromDate.value).getTime() : 0
+    // To time should include the whole day (23:59:59.999), 86400000 ms - 1 ms
+    const toTime = filterToDate.value ? new Date(filterToDate.value).getTime() + 86400000 - 1 : Infinity
+
+    result = result.filter(item => {
+      let itemDateStr = ''
+      if (filterDateType.value === 'ngay_hoan_thanh') {
+        const isCompleted = (Number(item.so_luong || 0) - Number(item.sl_da_giao || 0)) <= 0
+        itemDateStr = isCompleted ? (item.ngay_hoan_thanh || '') : ''
+      } else if (filterDateType.value === 'ngay_tao') {
+        itemDateStr = item.ngay_tao || ''
+      } else if (filterDateType.value === 'ngay_giao') {
+        itemDateStr = item.ngay_giao || ''
+      }
+      
+      if (!itemDateStr) return false
+      const itemTime = new Date(itemDateStr).getTime()
+      return itemTime >= fromTime && itemTime <= toTime
+    })
+  }
+  
   return result
 })
 
@@ -563,6 +671,10 @@ const clearFilter = () => {
   searchMaPO.value = ''
   filterMaBV.value = ''
   searchMaBV.value = ''
+  filterStatus.value = ''
+  filterDateType.value = 'ngay_hoan_thanh'
+  filterFromDate.value = ''
+  filterToDate.value = ''
 }
 
 const maBVOptions = computed(() => {
@@ -850,7 +962,8 @@ const exportToExcel = () => {
         'Số lượng': '',
         'ĐVT': '',
         'Ngày tạo': formatDate(group.ngay_tao),
-        'Ngày giao': formatDate(group.ngay_giao)
+        'Ngày giao': formatDate(group.ngay_giao),
+        'Ngày hoàn thành': ''
       })
       
       group.items.forEach(item => {
@@ -861,7 +974,8 @@ const exportToExcel = () => {
           'Số lượng': item.so_luong || 0,
           'ĐVT': item.dvt || 'p',
           'Ngày tạo': formatDate(item.ngay_tao),
-          'Ngày giao': formatDate(item.ngay_giao)
+          'Ngày giao': formatDate(item.ngay_giao),
+          'Ngày hoàn thành': ((Number(item.so_luong || 0) - Number(item.sl_da_giao || 0)) <= 0) ? formatDate(item.ngay_hoan_thanh) : '-'
         })
       })
       
@@ -872,7 +986,8 @@ const exportToExcel = () => {
         'Số lượng': '',
         'ĐVT': '',
         'Ngày tạo': '',
-        'Ngày giao': ''
+        'Ngày giao': '',
+        'Ngày hoàn thành': ''
       })
     })
     
@@ -918,7 +1033,8 @@ const downloadTemplate = () => {
         'Số lượng': 100,
         'ĐVT': 'p',
         'Ngày tạo': '2024-01-15',
-        'Ngày giao': '2024-01-20'
+        'Ngày giao': '2024-01-20',
+        'Ngày hoàn thành': '2024-01-20'
       },
       {
         'Mã PO': 'PO001',
@@ -927,7 +1043,8 @@ const downloadTemplate = () => {
         'Số lượng': 150,
         'ĐVT': 'p',
         'Ngày tạo': '2024-01-15',
-        'Ngày giao': '2024-01-20'
+        'Ngày giao': '2024-01-20',
+        'Ngày hoàn thành': ''
       },
       {
         'Mã PO': 'PO002',
@@ -936,7 +1053,8 @@ const downloadTemplate = () => {
         'Số lượng': 200,
         'ĐVT': 'p',
         'Ngày tạo': '2024-01-16',
-        'Ngày giao': '2024-01-21'
+        'Ngày giao': '2024-01-21',
+        'Ngày hoàn thành': ''
       }
     ]
     

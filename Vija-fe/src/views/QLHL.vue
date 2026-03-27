@@ -47,6 +47,13 @@
               <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_tra) }}</td>
               <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ formatDate(item.ngay_giao_bu) }}</td>
               <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center">
+                <span
+                  v-if="(Number(item.giao_bu || 0) - Number(item.sl || 0)) >= 0"
+                  class="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded mr-3 whitespace-nowrap inline-flex items-center shadow-sm"
+                >
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                  Hoàn thành
+                </span>
                 <button @click="editItem(item)" class="text-blue-600 hover:text-blue-800 mr-3" :disabled="loading">
                   Sửa
                 </button>

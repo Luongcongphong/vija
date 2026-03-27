@@ -9,7 +9,8 @@ export const getAllQLPO = async (req: AuthRequest, res: Response) => {
       SELECT 
         po.*,
         (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt,
-        (SELECT COALESCE(SUM(so_luong_giao), 0) FROM qlpo_delivery WHERE qlpo_id = po.id) as sl_da_giao
+        (SELECT COALESCE(SUM(so_luong_giao), 0) FROM qlpo_delivery WHERE qlpo_id = po.id) as sl_da_giao,
+        (SELECT MAX(ngay_giao) FROM qlpo_delivery WHERE qlpo_id = po.id) as ngay_hoan_thanh
       FROM qlpo po
       ORDER BY po.created_at DESC
     `);
@@ -26,7 +27,8 @@ export const getQLPOById = async (req: AuthRequest, res: Response) => {
       SELECT 
         po.*,
         (SELECT dvt FROM qldm WHERE ma_bv = po.ma_bv LIMIT 1) as dvt,
-        (SELECT COALESCE(SUM(so_luong_giao), 0) FROM qlpo_delivery WHERE qlpo_id = po.id) as sl_da_giao
+        (SELECT COALESCE(SUM(so_luong_giao), 0) FROM qlpo_delivery WHERE qlpo_id = po.id) as sl_da_giao,
+        (SELECT MAX(ngay_giao) FROM qlpo_delivery WHERE qlpo_id = po.id) as ngay_hoan_thanh
       FROM qlpo po
       WHERE po.id = ?
     `, [req.params.id]);

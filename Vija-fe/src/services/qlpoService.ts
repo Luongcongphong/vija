@@ -10,6 +10,7 @@ export interface QLPO {
   ngay_tao?: string;
   ngay_giao?: string;
   sl_da_giao?: number;
+  ngay_hoan_thanh?: string;
   created_at?: string;
   updated_at?: string;
 }
