@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Tự động detect hostname của server hiện tại
+const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const defaultApiUrl = `http://${currentHost}:3000/api`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

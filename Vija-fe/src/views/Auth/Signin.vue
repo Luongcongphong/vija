@@ -245,7 +245,11 @@ const handleSubmit = async () => {
     router.push('/')
   } catch (error: any) {
     console.error('Login error:', error)
-    errorMessage.value = error.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không đúng!'
+    if (error.code === 'ERR_NETWORK') {
+      errorMessage.value = 'Không thể kết nối đến máy chủ API. Vui lòng kiểm tra lại mạng hoặc server backend!'
+    } else {
+      errorMessage.value = error.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không đúng!'
+    }
   } finally {
     loading.value = false
   }
