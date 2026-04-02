@@ -60,6 +60,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/qlkho',
+      name: 'QLKHO',
+      component: () => import('../views/QLKHO.vue'),
+      meta: {
+        title: 'Quản lý Kho',
+        requiresAuth: true,
+      },
+    },
+    {
       path: '/qlhl',
       name: 'QLHL',
       component: () => import('../views/QLHL.vue'),

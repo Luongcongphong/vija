@@ -108,6 +108,34 @@ export async function initDatabase() {
     `);
     console.log('✓ Bảng qlnb đã sẵn sàng');
 
+    // Tạo bảng QLKHO_NHAP
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS qlkho_nhap (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ma_bv VARCHAR(50) NOT NULL COMMENT 'Mã bảo vệ/sản phẩm',
+        ngay_nhap DATE NOT NULL COMMENT 'Ngày nhập',
+        so_luong INT NOT NULL COMMENT 'Số lượng nhập',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_ma_bv (ma_bv)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Bảng qlkho_nhap đã sẵn sàng');
+
+    // Tạo bảng QLKHO_XUAT
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS qlkho_xuat (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ma_bv VARCHAR(50) NOT NULL COMMENT 'Mã bảo vệ/sản phẩm',
+        ma_po VARCHAR(50) NULL COMMENT 'Mã PO',
+        ngay_xuat DATE NOT NULL COMMENT 'Ngày xuất',
+        so_luong INT NOT NULL COMMENT 'Số lượng xuất',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_ma_bv (ma_bv),
+        INDEX idx_ma_po (ma_po)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Bảng qlkho_xuat đã sẵn sàng');
+
     // Kiểm tra và cập nhật cấu trúc bảng nếu cần
     await checkAndUpdateTables();
 
