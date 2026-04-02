@@ -37,9 +37,4 @@ export const qlnbService = {
     const response = await api.put(`/qlnb/${id}`, data);
     return response.data;
   },
-
-  async delete(id: number): Promise<any> {
-    const response = await api.delete(`/qlnb/${id}`);
-    return response.data;
-  },
 };

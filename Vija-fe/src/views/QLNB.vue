@@ -9,15 +9,6 @@
         >
           📥 Tải file mẫu
         </button>
-        <label class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 cursor-pointer">
-          📤 Import Excel
-          <input
-            type="file"
-            accept=".xlsx,.xls"
-            @change="handleFileImport"
-            class="hidden"
-          />
-        </label>
         <button
           @click="exportToExcel"
           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -31,12 +22,6 @@
           :disabled="loading"
         >
           🔄 Refresh PO
-        </button>
-        <button
-          @click="openAddModal"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Thêm mới
         </button>
       </div>
     </div>
@@ -150,21 +135,6 @@
                 </td>
                 <td class="px-1 py-1 border border-gray-300 dark:border-gray-600" colspan="8"></td>
                 <td class="px-1 py-1 border border-gray-300 dark:border-gray-600 flex gap-1">
-                  <button
-                    v-if="group.missingBVs.length > 0"
-                    @click="addMissingBVs(group.ma_po, group.missingBVs)"
-                    class="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                    :disabled="loading"
-                  >
-                    ➕ Thêm {{ group.missingBVs.length }}
-                  </button>
-                  <button
-                    @click="deletePO(group.ma_po)"
-                    class="text-red-600 hover:text-red-800 text-xs font-medium"
-                    :disabled="loading"
-                  >
-                    🗑️ Xóa PO
-                  </button>
                 </td>
               </tr>
               <!-- Chi tiết từng Mã BV có dữ liệu -->
@@ -187,17 +157,10 @@
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   <button
                     @click="editItem(item)"
-                    class="text-blue-600 hover:text-blue-800 mr-3"
+                    class="text-blue-600 hover:text-blue-800"
                     :disabled="loading"
                   >
                     Sửa
-                  </button>
-                  <button
-                    @click="deleteItem(item.id!)"
-                    class="text-red-600 hover:text-red-800"
-                    :disabled="loading"
-                  >
-                    Xóa
                   </button>
                 </td>
               </tr>
@@ -208,13 +171,13 @@
                 :key="`missing-${group.ma_po}-${missingBV.ma_bv}`"
                 class="border-b dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20"
               >
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-orange-600 font-medium">
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   {{ missingBV.ma_bv }}
                   <span class="text-xs text-orange-500 ml-1">(chưa có chi phí)</span>
                 </td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">{{ missingBV.ma_kh || '-' }}</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">{{ missingBV.so_luong || 0 }}</td>
-                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
+                <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">{{ missingBV.dvt || '-' }}</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">-</td>
@@ -224,11 +187,11 @@
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-400">0</td>
                 <td class="px-3 py-2 border border-gray-300 dark:border-gray-600">
                   <button
-                    @click="addSingleBV(group.ma_po, missingBV)"
-                    class="text-green-600 hover:text-green-800 text-sm"
+                    @click="editMissingBV(group.ma_po, missingBV)"
+                    class="text-blue-600 hover:text-blue-800"
                     :disabled="loading"
                   >
-                    ➕ Thêm
+                    Sửa
                   </button>
                 </td>
               </tr>
@@ -247,7 +210,7 @@
         <!-- Header cố định -->
         <div class="p-6 border-b dark:border-gray-700">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-            {{ editId !== null ? 'Sửa chi phí nội bộ' : 'Thêm chi phí nội bộ' }}
+            Sửa chi phí nội bộ
           </h2>
         </div>
         
@@ -265,38 +228,8 @@
             />
           </div>
           
-          <!-- Thông báo dữ liệu đã cập nhật -->
-          <div v-if="!editId" class="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
-            <p class="text-sm text-blue-700 dark:text-blue-300">
-              ✅ Dữ liệu PO đã được cập nhật từ QLPO mới nhất
-            </p>
-          </div>
-
-          <!-- Nút tạo tự động -->
-          <div v-if="formData.ma_po && !editId" class="mb-4">
-            <div class="flex gap-2">
-              <button
-                type="button"
-                @click="autoCreateFromPO"
-                class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-              >
-                🔄 Tạo tự động {{ maBVOptions.length }} Mã BV từ PO này
-              </button>
-              <button
-                type="button"
-                @click="closeModal"
-                class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
-              >
-                Hủy
-              </button>
-            </div>
-            <p class="text-xs text-gray-500 mt-2">
-              Tự động tạo các dòng chi phí cho tất cả Mã BV trong PO (chi phí mặc định = 0)
-            </p>
-          </div>
-
           <!-- Form nhập thủ công (hiển thị khi sửa) -->
-          <div v-if="editId" class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-4">
             <div class="mb-4 col-span-2">
               <label class="block text-sm font-medium mb-2">Mã BV</label>
               <input
@@ -311,6 +244,24 @@
               <input
                 v-model.number="formData.so_luong"
                 type="number"
+                readonly
+                class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Mã KH (Từ PO)</label>
+              <input
+                v-model="formData.ma_kh"
+                type="text"
+                readonly
+                class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">ĐVT (Từ PO)</label>
+              <input
+                v-model="formData.dvt"
+                type="text"
                 readonly
                 class="w-full px-3 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600"
               />
@@ -381,13 +332,13 @@
         <!-- Footer cố định -->
         <div class="p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div class="flex items-center justify-between">
-            <div v-if="editId" class="p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
+            <div class="p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
               <p class="text-sm font-medium">
                 Tổng phí: <span class="text-blue-600 dark:text-blue-300">{{ formatCurrency(tongPhi) }}</span>
               </p>
             </div>
-            <div v-else class="flex-1"></div>
-            <div class="flex gap-2">
+            
+            <div class="flex gap-2 text-right w-full justify-end mt-4 md:mt-0">
               <button
                 type="button"
                 @click="closeModal"
@@ -396,7 +347,6 @@
                 Hủy
               </button>
               <button
-                v-if="editId"
                 type="submit"
                 class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
@@ -419,7 +369,7 @@ import { qlpoService } from '@/services/qlpoService'
 import * as XLSX from 'xlsx'
 
 const data = ref<QLNB[]>([])
-const qlpoData = ref<Array<{ ma_po: string; ma_bv: string; so_luong?: number }>>([])
+const qlpoData = ref<Array<{ ma_po: string; ma_bv: string; ma_kh?: string; dvt?: string; so_luong?: number }>>([])
 const maPOList = ref<{ ma_po: string }[]>([])
 const filterMaPO = ref('')
 const searchMaPO = ref('')
@@ -431,6 +381,8 @@ const loading = ref(false)
 const formData = ref({
   ma_po: '',
   ma_bv: '',
+  ma_kh: '',
+  dvt: '',
   so_luong: 0,
   phoi_lieu: 0,
   gia_cong_ngoai: 0,
@@ -631,92 +583,6 @@ const handleMaPOChange = () => {
   formData.value.ma_bv = ''
 }
 
-// Tạo tự động các dòng từ PO
-const autoCreateFromPO = async () => {
-  if (!formData.value.ma_po) {
-    alert('Vui lòng chọn Mã PO trước!')
-    return
-  }
-  
-  try {
-    loading.value = true
-    
-    // Refresh dữ liệu QLPO trước khi tạo
-    console.log('Refreshing QLPO data before auto-create...')
-    await loadQLPO()
-    
-    // Lấy lại danh sách Mã BV sau khi refresh
-    const poItems = qlpoData.value.filter(item => item.ma_po === formData.value.ma_po)
-    
-    if (poItems.length === 0) {
-      alert(`Không tìm thấy Mã BV nào cho PO "${formData.value.ma_po}"!\n\nVui lòng kiểm tra lại QLPO.`)
-      return
-    }
-    
-    const confirmMsg = `Tạo tự động ${poItems.length} dòng chi phí cho PO "${formData.value.ma_po}"?\n\n` +
-      `Các Mã BV: ${poItems.map(item => item.ma_bv).join(', ')}\n\n` +
-      `Tất cả chi phí sẽ được đặt = 0, bạn có thể sửa sau.`
-    
-    if (!confirm(confirmMsg)) return
-    
-    let successCount = 0
-    let failCount = 0
-    let skipCount = 0
-    const failedItems: string[] = []
-    const skippedItems: string[] = []
-    
-    for (const poItem of poItems) {
-      try {
-        // Kiểm tra xem đã tồn tại chưa
-        const existing = data.value.find(item => 
-          item.ma_po === formData.value.ma_po && item.ma_bv === poItem.ma_bv
-        )
-        
-        if (existing) {
-          skipCount++
-          skippedItems.push(poItem.ma_bv)
-          continue
-        }
-        
-        await qlnbService.create({
-          ma_po: formData.value.ma_po,
-          ma_bv: poItem.ma_bv,
-          so_luong: poItem.so_luong || 0,
-          phoi_lieu: 0,
-          gia_cong_ngoai: 0,
-          gia_cong_noi_bo: 0,
-          xu_ly_be_mat: 0,
-          van_chuyen: 0,
-          phi_qldn: 0
-        })
-        successCount++
-      } catch (error) {
-        failCount++
-        failedItems.push(poItem.ma_bv)
-      }
-    }
-    
-    await loadData()
-    closeModal()
-    
-    let resultMsg = `Tạo tự động hoàn tất!\n\n`
-    resultMsg += `✅ Thành công: ${successCount} dòng\n`
-    if (skipCount > 0) {
-      resultMsg += `⚠️ Đã tồn tại: ${skipCount} dòng (${skippedItems.join(', ')})\n`
-    }
-    if (failCount > 0) {
-      resultMsg += `❌ Thất bại: ${failCount} dòng\n`
-      resultMsg += `Mã BV lỗi: ${failedItems.join(', ')}`
-    }
-    
-    alert(resultMsg)
-  } catch (error) {
-    console.error('Lỗi khi tạo tự động:', error)
-    alert('Không thể tạo tự động!')
-  } finally {
-    loading.value = false
-  }
-}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('vi-VN').format(value)
@@ -768,85 +634,6 @@ const refreshData = async () => {
   }
 }
 
-// Thêm một Mã BV còn thiếu
-const addSingleBV = async (ma_po: string, missingBV: any) => {
-  try {
-    loading.value = true
-    
-    await qlnbService.create({
-      ma_po,
-      ma_bv: missingBV.ma_bv,
-      so_luong: missingBV.so_luong || 0,
-      phoi_lieu: 0,
-      gia_cong_ngoai: 0,
-      gia_cong_noi_bo: 0,
-      xu_ly_be_mat: 0,
-      van_chuyen: 0,
-      phi_qldn: 0
-    })
-    
-    await loadData()
-    alert(`✅ Đã thêm Mã BV "${missingBV.ma_bv}" vào PO "${ma_po}"`)
-  } catch (error) {
-    console.error('Lỗi khi thêm Mã BV:', error)
-    alert('Không thể thêm Mã BV!')
-  } finally {
-    loading.value = false
-  }
-}
-
-// Thêm tất cả Mã BV còn thiếu cho một PO
-const addMissingBVs = async (ma_po: string, missingBVs: any[]) => {
-  const confirmMsg = `Thêm ${missingBVs.length} Mã BV còn thiếu cho PO "${ma_po}"?\n\n` +
-    `Các Mã BV: ${missingBVs.map(bv => bv.ma_bv).join(', ')}\n\n` +
-    `Tất cả chi phí sẽ được đặt = 0, bạn có thể sửa sau.`
-  
-  if (!confirm(confirmMsg)) return
-  
-  try {
-    loading.value = true
-    
-    let successCount = 0
-    let failCount = 0
-    const failedItems: string[] = []
-    
-    for (const missingBV of missingBVs) {
-      try {
-        await qlnbService.create({
-          ma_po,
-          ma_bv: missingBV.ma_bv,
-          so_luong: missingBV.so_luong || 0,
-          phoi_lieu: 0,
-          gia_cong_ngoai: 0,
-          gia_cong_noi_bo: 0,
-          xu_ly_be_mat: 0,
-          van_chuyen: 0,
-          phi_qldn: 0
-        })
-        successCount++
-      } catch (error) {
-        failCount++
-        failedItems.push(missingBV.ma_bv)
-      }
-    }
-    
-    await loadData()
-    
-    let resultMsg = `Thêm Mã BV hoàn tất!\n\n`
-    resultMsg += `✅ Thành công: ${successCount} Mã BV\n`
-    if (failCount > 0) {
-      resultMsg += `❌ Thất bại: ${failCount} Mã BV\n`
-      resultMsg += `Mã BV lỗi: ${failedItems.join(', ')}`
-    }
-    
-    alert(resultMsg)
-  } catch (error) {
-    console.error('Lỗi khi thêm Mã BV:', error)
-    alert('Không thể thêm Mã BV!')
-  } finally {
-    loading.value = false
-  }
-}
 
 const saveItem = async () => {
   try {
@@ -885,6 +672,8 @@ const editItem = (item: QLNB) => {
   formData.value = {
     ma_po: item.ma_po,
     ma_bv: item.ma_bv,
+    ma_kh: item.ma_kh || '',
+    dvt: item.dvt || '',
     so_luong: item.so_luong || 0,
     phoi_lieu: item.phoi_lieu,
     gia_cong_ngoai: item.gia_cong_ngoai,
@@ -896,72 +685,24 @@ const editItem = (item: QLNB) => {
   showAddModal.value = true
 }
 
-const deleteItem = async (id: number) => {
-  if (confirm('Bạn có chắc muốn xóa?')) {
-    try {
-      loading.value = true
-      await qlnbService.delete(id)
-      await loadData()
-    } catch (error) {
-      console.error('Lỗi khi xóa:', error)
-      alert('Không thể xóa dữ liệu!')
-    } finally {
-      loading.value = false
-    }
+const editMissingBV = (ma_po: string, missingBV: any) => {
+  editId.value = null // Null means it will create a new record
+  formData.value = {
+    ma_po: ma_po,
+    ma_bv: missingBV.ma_bv,
+    ma_kh: missingBV.ma_kh || '',
+    dvt: missingBV.dvt || '',
+    so_luong: missingBV.so_luong || 0,
+    phoi_lieu: 0,
+    gia_cong_ngoai: 0,
+    gia_cong_noi_bo: 0,
+    xu_ly_be_mat: 0,
+    van_chuyen: 0,
+    phi_qldn: 0,
   }
+  showAddModal.value = true
 }
 
-const deletePO = async (ma_po: string) => {
-  const group = groupedData.value.find(g => g.ma_po === ma_po)
-  if (!group) return
-  
-  const confirmMsg = `Bạn có chắc muốn xóa toàn bộ chi phí của PO "${ma_po}"?\n\n` +
-    `Sẽ xóa ${group.items.length} Mã BV:\n` +
-    group.items.map(item => `- ${item.ma_bv}`).join('\n')
-  
-  if (confirm(confirmMsg)) {
-    try {
-      loading.value = true
-      
-      // Xóa từng dòng
-      let successCount = 0
-      for (const item of group.items) {
-        try {
-          await qlnbService.delete(item.id!)
-          successCount++
-        } catch (error) {
-          console.error('Lỗi khi xóa item:', item.id, error)
-        }
-      }
-      
-      await loadData()
-      alert(`✅ Đã xóa thành công ${successCount}/${group.items.length} dòng của PO "${ma_po}"`)
-    } catch (error) {
-      console.error('Lỗi khi xóa PO:', error)
-      alert('Không thể xóa PO!')
-    } finally {
-      loading.value = false
-    }
-  }
-}
-
-const openAddModal = async () => {
-  try {
-    loading.value = true
-    
-    // Refresh dữ liệu QLPO trước khi mở modal
-    console.log('Refreshing QLPO data before opening modal...')
-    await loadQLPO()
-    await loadMaPOList()
-    
-    showAddModal.value = true
-  } catch (error) {
-    console.error('Lỗi khi refresh dữ liệu:', error)
-    alert('Không thể tải dữ liệu mới nhất từ QLPO!')
-  } finally {
-    loading.value = false
-  }
-}
 
 const closeModal = () => {
   showAddModal.value = false
@@ -969,6 +710,8 @@ const closeModal = () => {
   formData.value = {
     ma_po: '',
     ma_bv: '',
+    ma_kh: '',
+    dvt: '',
     so_luong: 0,
     phoi_lieu: 0,
     gia_cong_ngoai: 0,
@@ -1097,139 +840,6 @@ const exportToExcel = () => {
   }
 }
 
-const handleFileImport = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  
-  if (!file) return
-  
-  try {
-    loading.value = true
-    
-    const reader = new FileReader()
-    
-    reader.onload = async (e) => {
-      try {
-        const data = e.target?.result
-        const workbook = XLSX.read(data, { type: 'binary' })
-        
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
-        
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as Array<{
-          'Mã PO': string
-          'Mã BV': string
-          'Mã KH'?: string
-          'Số lượng'?: number
-          'ĐVT'?: string
-          'Phôi Liệu': number
-          'Gia Công Ngoài': number
-          'Gia Công Nội Bộ': number
-          'Xử lý Bề Mặt': number
-          'Vận Chuyển': number
-          'Phí QLDN': number
-        }>
-        
-        if (jsonData.length === 0) {
-          alert('File Excel không có dữ liệu!')
-          loading.value = false
-          return
-        }
-        
-        const validData: Array<Partial<QLNB>> = []
-        const errors: string[] = []
-        
-        jsonData.forEach((row, index) => {
-          const rowNum = index + 2
-          
-          if (!row['Mã PO']) {
-            errors.push(`Dòng ${rowNum}: Thiếu Mã PO`)
-            return
-          }
-          if (!row['Mã BV']) {
-            errors.push(`Dòng ${rowNum}: Thiếu Mã BV`)
-            return
-          }
-          
-          validData.push({
-            ma_po: String(row['Mã PO']).trim(),
-            ma_bv: String(row['Mã BV']).trim(),
-            ma_kh: row['Mã KH'] ? String(row['Mã KH']).trim() : undefined,
-            so_luong: row['Số lượng'] ? Number(row['Số lượng']) : 0,
-            dvt: row['ĐVT'] ? String(row['ĐVT']).trim() : undefined,
-            phoi_lieu: Number(row['Phôi Liệu']) || 0,
-            gia_cong_ngoai: Number(row['Gia Công Ngoài']) || 0,
-            gia_cong_noi_bo: Number(row['Gia Công Nội Bộ']) || 0,
-            xu_ly_be_mat: Number(row['Xử lý Bề Mặt']) || 0,
-            van_chuyen: Number(row['Vận Chuyển']) || 0,
-            phi_qldn: Number(row['Phí QLDN']) || 0
-          })
-        })
-        
-        if (errors.length > 0) {
-          alert('Có lỗi trong file Excel:\n' + errors.join('\n'))
-          loading.value = false
-          return
-        }
-        
-        if (validData.length === 0) {
-          alert('Không có dữ liệu hợp lệ để import!')
-          loading.value = false
-          return
-        }
-        
-        const confirmMsg = `Bạn có chắc muốn import ${validData.length} dòng dữ liệu?`
-        
-        if (!confirm(confirmMsg)) {
-          loading.value = false
-          return
-        }
-        
-        let successCount = 0
-        let failCount = 0
-        const failedRows: string[] = []
-        
-        for (let i = 0; i < validData.length; i++) {
-          try {
-            await qlnbService.create(validData[i] as QLNB)
-            successCount++
-          } catch (err: unknown) {
-            failCount++
-            const error = err as { response?: { data?: { message?: string } } }
-            const errorMsg = error?.response?.data?.message || 'Lỗi không xác định'
-            failedRows.push(`Dòng ${i + 2}: ${validData[i].ma_po} - ${validData[i].ma_bv} (${errorMsg})`)
-          }
-        }
-        
-        await loadData()
-        
-        let resultMsg = `Import hoàn tất!\n\n`
-        resultMsg += `✅ Thành công: ${successCount} dòng\n`
-        if (failCount > 0) {
-          resultMsg += `❌ Thất bại: ${failCount} dòng\n\n`
-          resultMsg += 'Chi tiết lỗi:\n' + failedRows.join('\n')
-        }
-        
-        alert(resultMsg)
-        
-      } catch (error) {
-        console.error('Lỗi khi xử lý file:', error)
-        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra định dạng file!')
-      } finally {
-        loading.value = false
-      }
-    }
-    
-    reader.readAsBinaryString(file)
-    
-  } catch (error) {
-    console.error('Lỗi khi import:', error)
-    alert('Không thể import file!')
-    loading.value = false
-  } finally {
-    target.value = ''
-  }
-}
 
 onMounted(() => {
   loadQLPO()

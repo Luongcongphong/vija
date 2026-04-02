@@ -7,8 +7,8 @@ export const getAllQLNB = async (req: AuthRequest, res: Response) => {
     const [rows] = await pool.query(`
       SELECT 
         nb.*,
-        (SELECT ma_kh FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as ma_kh,
-        (SELECT dvt FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as dvt
+        (SELECT ma_kh FROM qlpo WHERE ma_po = nb.ma_po AND ma_bv = nb.ma_bv LIMIT 1) as ma_kh,
+        (SELECT dvt FROM qlpo WHERE ma_po = nb.ma_po AND ma_bv = nb.ma_bv LIMIT 1) as dvt
       FROM qlnb nb
       ORDER BY nb.created_at DESC
     `);
@@ -23,8 +23,8 @@ export const getQLNBById = async (req: AuthRequest, res: Response) => {
     const [rows]: any = await pool.query(`
       SELECT 
         nb.*,
-        (SELECT ma_kh FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as ma_kh,
-        (SELECT dvt FROM qldm WHERE ma_bv = nb.ma_bv LIMIT 1) as dvt
+        (SELECT ma_kh FROM qlpo WHERE ma_po = nb.ma_po AND ma_bv = nb.ma_bv LIMIT 1) as ma_kh,
+        (SELECT dvt FROM qlpo WHERE ma_po = nb.ma_po AND ma_bv = nb.ma_bv LIMIT 1) as dvt
       FROM qlnb nb
       WHERE nb.id = ?
     `, [req.params.id]);
@@ -64,6 +64,7 @@ export const createQLNB = async (req: AuthRequest, res: Response) => {
       id: result.insertId
     });
   } catch (error) {
+    console.error('CREATE_ERROR', error);
     res.status(500).json({ message: 'Lỗi server', error });
   }
 };
@@ -114,11 +115,3 @@ export const updateQLNB = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const deleteQLNB = async (req: AuthRequest, res: Response) => {
-  try {
-    await pool.query('DELETE FROM qlnb WHERE id = ?', [req.params.id]);
-    res.json({ message: 'Xóa thành công' });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi server', error });
-  }
-};
