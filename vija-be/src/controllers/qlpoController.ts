@@ -106,8 +106,8 @@ export const createQLPO = async (req: AuthRequest, res: Response) => {
     const soLuong = Number(so_luong) || 0;
 
     const [result]: any = await pool.query(
-      'INSERT INTO qlpo (ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao, so_bg) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [ma_po, ma_bv, ma_kh || null, soLuong, formattedNgayTao, formattedNgayGiao, so_bg || '']
+      'INSERT INTO qlpo (ma_po, ma_bv, ma_kh, so_luong, ngay_tao, ngay_giao) VALUES (?, ?, ?, ?, ?, ?)',
+      [ma_po, ma_bv, ma_kh || null, soLuong, formattedNgayTao, formattedNgayGiao]
     );
 
     res.status(201).json({
