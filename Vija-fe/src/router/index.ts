@@ -59,15 +59,15 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
-    {
-      path: '/qlkho',
-      name: 'QLKHO',
-      component: () => import('../views/QLKHO.vue'),
-      meta: {
-        title: 'Quản lý Kho',
-        requiresAuth: true,
-      },
-    },
+    // {
+    //   path: '/qlkho',
+    //   name: 'QLKHO',
+    //   component: () => import('../views/QLKHO.vue'),
+    //   meta: {
+    //     title: 'Quản lý Kho',
+    //     requiresAuth: true,
+    //   },
+    // },
     {
       path: '/qlhl',
       name: 'QLHL',

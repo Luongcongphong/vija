@@ -292,11 +292,11 @@ const menuGroups = [
         name: "QLPO",
         path: "/qlpo",
       },
-      {
-        icon: GridIcon, // You can change this to a preferred icon if available
-        name: "QL KHO",
-        path: "/qlkho",
-      },
+      // {
+      //   icon: GridIcon, // You can change this to a preferred icon if available
+      //   name: "QL KHO",
+      //   path: "/qlkho",
+      // },
       {
         icon: DocsIcon,
         name: "QL Hàng Lỗi",
